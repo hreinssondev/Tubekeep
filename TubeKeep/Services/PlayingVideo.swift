@@ -12,6 +12,9 @@ enum PlayingVideo {
     struct Found {
         let id: String
         let title: String?
+        /// Where the browser is in the video, when it's the one in Now Playing.
+        var position: Double?
+        var isPlaying = false
     }
 
     /// The tab that's playing, matched by its Now Playing title; otherwise the front tab, if it's a YouTube video.
@@ -23,7 +26,7 @@ enum PlayingVideo {
             for window in try browser.windows() {
                 for tab in window.tabs where key(tab.title).contains(title) {
                     if case .video(let videoID)? = Link(tab.url) {
-                        return Found(id: videoID, title: playing.title)
+                        return Found(id: videoID, title: playing.title, position: playing.elapsedTimeNow, isPlaying: playing.playing == true)
                     }
                 }
             }
@@ -60,7 +63,8 @@ enum PlayingVideo {
 }
 
 extension Library {
-    /// Saves the video playing in the browser. Bound to a global shortcut, so it reports back with a notification.
+    /// Saves the video playing in the browser and carries on playing it in TubeKeep from the same
+    /// spot, pausing the browser. Bound to a global shortcut, so failures report back with a notification.
     func savePlayingVideo() async {
         do {
             guard let found = try await PlayingVideo.find() else {
@@ -70,8 +74,10 @@ extension Library {
             }
             let isNew = addVideo(id: found.id, title: found.title, to: nil)
             NSSound(named: isNew ? "Pop" : "Tink")?.play()
-            let title = video(found.id)?.title ?? found.title ?? "Video"
-            Notifier.post(isNew ? "Saving to TubeKeep" : "Already in TubeKeep", title)
+            guard let video = video(found.id) else { return }
+            if let position = found.position, position > 3 { video.resumePosition = position }
+            if found.isPlaying { await NowPlaying.pause() }
+            open(video)
         } catch let error as ScriptError where error.isNotPermitted {
             NSSound.beep()
             Notifier.post("TubeKeep can't read your browser tabs", "Allow it in System Settings › Privacy & Security › Automation.")

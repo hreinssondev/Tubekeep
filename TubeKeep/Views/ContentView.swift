@@ -58,6 +58,11 @@ struct ContentView: View {
             add(text)
             return true
         }
+        .onChange(of: library.selectionRequest, initial: true) { _, id in
+            guard let id else { return }
+            library.selectionRequest = nil
+            if let video = library.video(id) { select(video) }
+        }
         .onChange(of: renaming) { _, folder in newName = folder?.name ?? "" }
         .alert("Rename Folder", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
             TextField("Name", text: $newName)
@@ -86,8 +91,12 @@ struct ContentView: View {
         library.add(text)
         let links = Link.all(in: text)
         guard links.count == 1, case .video(let id) = links[0], let video = library.video(id), !player.isPlaying else { return }
-        path = [.byDate, .day(Calendar.current.startOfDay(for: video.savedAt)), .video(id)]
+        select(video)
         player.show(video, autoplay: true)
+    }
+
+    private func select(_ video: Video) {
+        path = [.byDate, .day(Calendar.current.startOfDay(for: video.savedAt)), .video(video.videoID)]
     }
 
     private var deleteTitle: String {

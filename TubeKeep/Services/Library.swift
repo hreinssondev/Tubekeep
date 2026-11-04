@@ -21,6 +21,8 @@ final class Library {
     var message: String?
     /// Bumped by the New Folder command; the browser creates the folder where the selection is.
     var newFolderRequest = 0
+    /// A video for the browser to select, set by `open(_:)`; the browser clears it.
+    var selectionRequest: String?
 
     @ObservationIgnored private let downloadGate = Gate(2)
     @ObservationIgnored private let upgradeGate = Gate(2)
@@ -131,6 +133,14 @@ final class Library {
                 }
             }
         }
+    }
+
+    /// Brings up the main window with the video selected and playing.
+    func open(_ video: Video) {
+        selectionRequest = video.videoID
+        player.show(video, autoplay: true)
+        // Reopening the running app shows the main window, even when it was closed.
+        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: NSWorkspace.OpenConfiguration())
     }
 
     func addFromClipboard() {

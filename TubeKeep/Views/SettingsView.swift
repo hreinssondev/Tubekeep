@@ -41,7 +41,7 @@ struct SettingsView: View {
                         try? on ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister()
                         openAtLogin = SMAppService.mainApp.status == .enabled
                     }
-                Text("Works from any app while TubeKeep is running: saves the YouTube video playing in Safari or Chrome, or the one in the front tab.")
+                Text("Works from any app while TubeKeep is running: saves the YouTube video playing in Safari or Chrome (or the one in the front tab) and plays it here from the same spot.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
