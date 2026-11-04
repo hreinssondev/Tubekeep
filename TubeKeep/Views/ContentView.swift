@@ -62,6 +62,7 @@ struct ContentView: View {
             guard let id else { return }
             library.selectionRequest = nil
             if let video = library.video(id) { select(video) }
+            reveal.hide()
         }
         .onChange(of: renaming) { _, folder in newName = folder?.name ?? "" }
         .alert("Rename Folder", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {

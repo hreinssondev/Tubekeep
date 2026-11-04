@@ -135,7 +135,7 @@ final class Library {
         }
     }
 
-    /// Brings up the main window with the video selected and playing.
+    /// Brings up the main window with the video selected and playing, the library tucked away under it.
     func open(_ video: Video) {
         selectionRequest = video.videoID
         player.show(video, autoplay: true)

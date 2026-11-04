@@ -33,6 +33,10 @@ final class LibraryReveal {
         withAnimation(.snappy(duration: 0.3)) { progress = isShown ? 0 : 1 }
     }
 
+    func hide() {
+        withAnimation(.snappy(duration: 0.3)) { progress = 0 }
+    }
+
     private func handle(_ event: NSEvent) -> NSEvent? {
         if event.momentumPhase != [] {
             return tracking && vertical == true ? nil : event
