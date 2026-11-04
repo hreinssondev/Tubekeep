@@ -11,13 +11,13 @@ struct ContentView: View {
     @State private var confirmingDelete: Node?
 
     var body: some View {
-        // The video fills the window; scrolling down over it slides the library up underneath.
+        // A page: the video fills the window and the library sits below it. Scrolling down over the video
+        // scrolls the page up to the library; the video keeps its size and just moves.
         GeometryReader { geometry in
             let height = (geometry.size.height * 0.62).rounded()
-            let shown = reveal.progress * height
             VStack(spacing: 0) {
                 PlayerPane()
-                    .frame(height: geometry.size.height - shown)
+                    .frame(height: geometry.size.height)
                 VStack(spacing: 0) {
                     if let video = player.videoID.flatMap(library.video) {
                         VideoInfoPanel(video: video)
@@ -26,9 +26,10 @@ struct ContentView: View {
                     ColumnBrowser(path: $path, renaming: $renaming, confirmingDelete: $confirmingDelete)
                 }
                 .frame(height: height, alignment: .top)
-                .frame(height: shown, alignment: .top)
-                .clipped()
             }
+            .frame(height: geometry.size.height, alignment: .top)
+            .offset(y: -reveal.progress * height)
+            .clipped()
             .onChange(of: height, initial: true) { reveal.distance = height }
         }
         .toolbar {

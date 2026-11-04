@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// How far the library has scrolled up under the player: 0 shows only the video, 1 the whole library.
+/// How far the page has scrolled down from the video to the library: 0 shows only the video, 1 the whole library.
 /// Only vertical scrolling over the video moves it, so the browser's lists keep their own scrolling.
 /// Scrolling over the video never reaches the player, which would pause and seek; the arrow keys seek.
 @MainActor @Observable
@@ -85,7 +85,9 @@ final class LibraryReveal {
     }
 
     private func isOverPlayer(_ event: NSEvent) -> Bool {
-        guard let view = playerView, let window = view.window, event.window === window else { return false }
+        // The video's top scrolls up under the toolbar, which doesn't count.
+        guard let view = playerView, let window = view.window, event.window === window,
+              window.contentLayoutRect.contains(event.locationInWindow) else { return false }
         return view.bounds.contains(view.convert(event.locationInWindow, from: nil))
     }
 }

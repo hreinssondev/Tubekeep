@@ -56,6 +56,12 @@ private final class MainPlayerView: AVPlayerView {
 
     override func scrollWheel(with event: NSEvent) {}
 
+    /// Scroll events would otherwise go to the controls and video subviews, which seek on their own.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard NSApp.currentEvent?.type == .scrollWheel else { return super.hitTest(point) }
+        return frame.contains(point) ? self : nil
+    }
+
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
