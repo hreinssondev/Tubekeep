@@ -1,5 +1,7 @@
 import SwiftUI
 import SwiftData
+import KeyboardShortcuts
+import ServiceManagement
 
 struct SettingsView: View {
     @Environment(Library.self) private var library
@@ -7,6 +9,7 @@ struct SettingsView: View {
     @AppStorage(Prefs.maxHeight) private var maxHeight = 1080
     @AppStorage(Prefs.lowHeight) private var lowHeight = 480
     @Query private var videos: [Video]
+    @State private var openAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
         Form {
@@ -26,6 +29,17 @@ struct SettingsView: View {
                     Text("Downgrade after \(downgradeDays) \(downgradeDays == 1 ? "day" : "days") unplayed")
                 }
                 Text("Playing a downgraded video downloads it in full quality again and switches over while it plays. Pinned videos are never downgraded.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Section("Saving from the Browser") {
+                KeyboardShortcuts.Recorder("Save playing video:", name: .savePlayingVideo)
+                Toggle("Open at login", isOn: $openAtLogin)
+                    .onChange(of: openAtLogin) { _, on in
+                        try? on ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister()
+                        openAtLogin = SMAppService.mainApp.status == .enabled
+                    }
+                Text("Works from any app while TubeKeep is running: saves the YouTube video playing in Safari or Chrome, or the one in the front tab.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

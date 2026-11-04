@@ -1,4 +1,5 @@
 import AppKit
+import KeyboardShortcuts
 import SwiftData
 import Observation
 
@@ -39,6 +40,9 @@ final class Library {
             fatalError("Couldn't open the library: \(error)")
         }
         player.library = self
+        KeyboardShortcuts.onKeyDown(for: .savePlayingVideo) { [weak self] in
+            Task { await self?.savePlayingVideo() }
+        }
         Task { await start() }
     }
 
@@ -113,6 +117,11 @@ final class Library {
     }
 
     func handle(openURL url: URL) {
+        // tubekeep://grab saves the video playing in the browser, like the shortcut (for Raycast, Shortcuts…).
+        if url.scheme == "tubekeep", url.host == "grab" {
+            Task { await savePlayingVideo() }
+            return
+        }
         // tubekeep://add?url=<encoded YouTube link>, for bookmarklets and Shortcuts.
         guard url.scheme == "tubekeep",
               let link = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "url" })?.value
@@ -120,19 +129,22 @@ final class Library {
         add(link)
     }
 
-    private func addVideo(id: String, title: String? = nil, channel: String = "", duration: Double = 0, to folder: Folder?) {
+    /// Returns false when the video was already in the library.
+    @discardableResult
+    func addVideo(id: String, title: String? = nil, channel: String = "", duration: Double = 0, to folder: Folder?) -> Bool {
         if let existing = video(id) {
             if let folder, !existing.folders.contains(where: { $0.uid == folder.uid }) {
                 folder.videos.append(existing)
                 save()
             }
-            return
+            return false
         }
         let video = Video(videoID: id, title: title, channel: channel, duration: duration)
         context.insert(video)
         folder?.videos.append(video)
         save()
         download(video)
+        return true
     }
 
     // MARK: Jobs

@@ -8,20 +8,26 @@
 
 /* Begin PBXBuildFile section */
 		0F6B1F97E0E4278BEC36180F /* Links.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19DBDFB246804E3C0EAE8AF4 /* Links.swift */; };
+		1C669AB5E8CCB7FAE1180293 /* Browser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60616AAC7F74152AF2D376BD /* Browser.swift */; };
 		2A37D286791CB7730AAB3109 /* Media.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9504A029107DE2756BA25AD0 /* Media.swift */; };
 		2AC7BD5BA66F7BE2EDCF55B8 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B86353C6E3A27C64483DFCB8 /* SettingsView.swift */; };
+		385B5992D44B117E0DB0A45E /* NowPlaying.swift in Sources */ = {isa = PBXBuildFile; fileRef = 669BAB1CCC0F543183204D89 /* NowPlaying.swift */; };
+		3D020E153D2076DAC867F5A7 /* PlayingVideo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228208338343C0161EEF0E8F /* PlayingVideo.swift */; };
 		3DF23D1A3DD72AC058C533F7 /* YTDLP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61B3932D56291AAA381C2F02 /* YTDLP.swift */; };
 		425E53712E83378F03EFCE79 /* PlayerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD365B721C176628B38F2EBF /* PlayerController.swift */; };
 		53C74C4ED78C66F3C04B040E /* Video.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77BB516341D58D4B9ECBBBCC /* Video.swift */; };
 		60D80F5EF4BB49999A819025 /* LibraryReveal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 892C3243B0FD51AB66B3000D /* LibraryReveal.swift */; };
 		69A4D2D2B48A15F5FE337134 /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBCC47AE59CA0B369DAFEAD1 /* Library.swift */; };
+		6BB63F5E71B1355C5CC6BB3D /* mediaremote-adapter.pl in Resources */ = {isa = PBXBuildFile; fileRef = FBC5CF2101C5AB083E4C57B3 /* mediaremote-adapter.pl */; };
 		7150F7094F9F9BE8D1F550D6 /* TubeKeepApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E636EA77D63AE51ECBCE32D5 /* TubeKeepApp.swift */; };
 		721D3BECDAA283B1467845EE /* Folder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CB7FC96B8A4B21FCD0F60BF /* Folder.swift */; };
+		78E59633AFAD820EA845DB49 /* MediaRemoteAdapter.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DDC9EE0492CEB4ACFBAAFF39 /* MediaRemoteAdapter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		9A710EB14A09D7BE692F8B2E /* Prefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C5712660E39D7A201ACB858 /* Prefs.swift */; };
 		A122DCC4BFBC7D10F13CF8F3 /* ColumnBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EB609F11F438DF6093C86E9 /* ColumnBrowser.swift */; };
 		C9843A80B40677A080736449 /* PlayerPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51D20AB927628DABC9346FAC /* PlayerPane.swift */; };
 		D13D36108FAB352ED3363EC5 /* Tools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FABE2B46B997692A291CA3B /* Tools.swift */; };
 		D8367789CD6514070258F472 /* Tree.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE01FB6717CFF52D96D25DFA /* Tree.swift */; };
+		DB4AF7DF23B9D22374FBAADF /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 533AF84FDAE85A380E24C84A /* KeyboardShortcuts */; };
 		DB8C5D089FF99EC1CE8DFE9E /* ProcessRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1698FD737D135BB96348947B /* ProcessRunner.swift */; };
 		DF6C5E44C4FD267EAF1EF683 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2A964307B11C2A3B2B758081 /* Assets.xcassets */; };
 		E48E9BDF3A2A916C588C4B0D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A518A7B2AC7189C8B8069BC6 /* ContentView.swift */; };
@@ -29,17 +35,35 @@
 		F6CB392DB4EEDA20937BDC07 /* Paths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35A00998B4948B1DD7A3B909 /* Paths.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		74CC5DFACACB8AE0896789DA /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				78E59633AFAD820EA845DB49 /* MediaRemoteAdapter.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		0EB609F11F438DF6093C86E9 /* ColumnBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColumnBrowser.swift; sourceTree = "<group>"; };
 		0FABE2B46B997692A291CA3B /* Tools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tools.swift; sourceTree = "<group>"; };
 		1698FD737D135BB96348947B /* ProcessRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessRunner.swift; sourceTree = "<group>"; };
 		19DBDFB246804E3C0EAE8AF4 /* Links.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Links.swift; sourceTree = "<group>"; };
+		228208338343C0161EEF0E8F /* PlayingVideo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayingVideo.swift; sourceTree = "<group>"; };
 		2A964307B11C2A3B2B758081 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2CB7FC96B8A4B21FCD0F60BF /* Folder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Folder.swift; sourceTree = "<group>"; };
 		35A00998B4948B1DD7A3B909 /* Paths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Paths.swift; sourceTree = "<group>"; };
 		381E54C29729EBC179185927 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		51D20AB927628DABC9346FAC /* PlayerPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerPane.swift; sourceTree = "<group>"; };
+		60616AAC7F74152AF2D376BD /* Browser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Browser.swift; sourceTree = "<group>"; };
 		61B3932D56291AAA381C2F02 /* YTDLP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YTDLP.swift; sourceTree = "<group>"; };
+		669BAB1CCC0F543183204D89 /* NowPlaying.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlaying.swift; sourceTree = "<group>"; };
+		68CE2ADAE8F5D9457894F9F8 /* TubeKeep.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TubeKeep.entitlements; sourceTree = "<group>"; };
 		77BB516341D58D4B9ECBBBCC /* Video.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Video.swift; sourceTree = "<group>"; };
 		7C5712660E39D7A201ACB858 /* Prefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prefs.swift; sourceTree = "<group>"; };
 		83EBFE8F210E7101881B4728 /* VideoRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoRow.swift; sourceTree = "<group>"; };
@@ -50,11 +74,32 @@
 		AD365B721C176628B38F2EBF /* PlayerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerController.swift; sourceTree = "<group>"; };
 		AE01FB6717CFF52D96D25DFA /* Tree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tree.swift; sourceTree = "<group>"; };
 		B86353C6E3A27C64483DFCB8 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		DDC9EE0492CEB4ACFBAAFF39 /* MediaRemoteAdapter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaRemoteAdapter.framework; path = Vendor/MediaRemoteAdapter.framework; sourceTree = "<group>"; };
 		E636EA77D63AE51ECBCE32D5 /* TubeKeepApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TubeKeepApp.swift; sourceTree = "<group>"; };
 		EBCC47AE59CA0B369DAFEAD1 /* Library.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Library.swift; sourceTree = "<group>"; };
+		FBC5CF2101C5AB083E4C57B3 /* mediaremote-adapter.pl */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; path = "mediaremote-adapter.pl"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFrameworksBuildPhase section */
+		BE5C9866CC8D5FC18493DA02 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DB4AF7DF23B9D22374FBAADF /* KeyboardShortcuts in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
 /* Begin PBXGroup section */
+		3B3595CF52C3D2F8BF7CB2A0 /* Vendor */ = {
+			isa = PBXGroup;
+			children = (
+				FBC5CF2101C5AB083E4C57B3 /* mediaremote-adapter.pl */,
+			);
+			path = Vendor;
+			sourceTree = "<group>";
+		};
 		40102A21751BB299E85E230F /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -68,11 +113,14 @@
 		51FBCDC9B310A35FC72233AB /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				60616AAC7F74152AF2D376BD /* Browser.swift */,
 				EBCC47AE59CA0B369DAFEAD1 /* Library.swift */,
 				19DBDFB246804E3C0EAE8AF4 /* Links.swift */,
 				9504A029107DE2756BA25AD0 /* Media.swift */,
+				669BAB1CCC0F543183204D89 /* NowPlaying.swift */,
 				35A00998B4948B1DD7A3B909 /* Paths.swift */,
 				AD365B721C176628B38F2EBF /* PlayerController.swift */,
+				228208338343C0161EEF0E8F /* PlayingVideo.swift */,
 				1698FD737D135BB96348947B /* ProcessRunner.swift */,
 				0FABE2B46B997692A291CA3B /* Tools.swift */,
 				61B3932D56291AAA381C2F02 /* YTDLP.swift */,
@@ -93,6 +141,7 @@
 			children = (
 				2A964307B11C2A3B2B758081 /* Assets.xcassets */,
 				381E54C29729EBC179185927 /* Info.plist */,
+				68CE2ADAE8F5D9457894F9F8 /* TubeKeep.entitlements */,
 				E636EA77D63AE51ECBCE32D5 /* TubeKeepApp.swift */,
 				40102A21751BB299E85E230F /* Models */,
 				51FBCDC9B310A35FC72233AB /* Services */,
@@ -115,10 +164,20 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
+		E4782FB45C136F75E7F2967C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				DDC9EE0492CEB4ACFBAAFF39 /* MediaRemoteAdapter.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		E9CE24B3A9AD647F2C3874BD = {
 			isa = PBXGroup;
 			children = (
 				936CBAD6FBC8CC48417A2298 /* TubeKeep */,
+				3B3595CF52C3D2F8BF7CB2A0 /* Vendor */,
+				E4782FB45C136F75E7F2967C /* Frameworks */,
 				5D5AF517B18C1E7CDF0060B6 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -132,6 +191,8 @@
 			buildPhases = (
 				D7EBD49D23CB98FFBB22A68D /* Sources */,
 				076BDD9961B33E8FEF2F40F4 /* Resources */,
+				BE5C9866CC8D5FC18493DA02 /* Frameworks */,
+				74CC5DFACACB8AE0896789DA /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -139,6 +200,7 @@
 			);
 			name = TubeKeep;
 			packageProductDependencies = (
+				533AF84FDAE85A380E24C84A /* KeyboardShortcuts */,
 			);
 			productName = TubeKeep;
 			productReference = A6BE6A126E439F04BCB11840 /* TubeKeep.app */;
@@ -168,6 +230,9 @@
 			);
 			mainGroup = E9CE24B3A9AD647F2C3874BD;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BF37B8007879AA28740ADE08 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5D5AF517B18C1E7CDF0060B6 /* Products */;
 			projectDirPath = "";
@@ -184,6 +249,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				DF6C5E44C4FD267EAF1EF683 /* Assets.xcassets in Resources */,
+				6BB63F5E71B1355C5CC6BB3D /* mediaremote-adapter.pl in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -194,6 +260,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1C669AB5E8CCB7FAE1180293 /* Browser.swift in Sources */,
 				A122DCC4BFBC7D10F13CF8F3 /* ColumnBrowser.swift in Sources */,
 				E48E9BDF3A2A916C588C4B0D /* ContentView.swift in Sources */,
 				721D3BECDAA283B1467845EE /* Folder.swift in Sources */,
@@ -201,9 +268,11 @@
 				60D80F5EF4BB49999A819025 /* LibraryReveal.swift in Sources */,
 				0F6B1F97E0E4278BEC36180F /* Links.swift in Sources */,
 				2A37D286791CB7730AAB3109 /* Media.swift in Sources */,
+				385B5992D44B117E0DB0A45E /* NowPlaying.swift in Sources */,
 				F6CB392DB4EEDA20937BDC07 /* Paths.swift in Sources */,
 				425E53712E83378F03EFCE79 /* PlayerController.swift in Sources */,
 				C9843A80B40677A080736449 /* PlayerPane.swift in Sources */,
+				3D020E153D2076DAC867F5A7 /* PlayingVideo.swift in Sources */,
 				9A710EB14A09D7BE692F8B2E /* Prefs.swift in Sources */,
 				DB8C5D089FF99EC1CE8DFE9E /* ProcessRunner.swift in Sources */,
 				2AC7BD5BA66F7BE2EDCF55B8 /* SettingsView.swift in Sources */,
@@ -223,10 +292,15 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TubeKeep/TubeKeep.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_HARDENED_RUNTIME = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"Vendor\"",
+				);
 				INFOPLIST_FILE = TubeKeep/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -363,10 +437,15 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TubeKeep/TubeKeep.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_HARDENED_RUNTIME = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"Vendor\"",
+				);
 				INFOPLIST_FILE = TubeKeep/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -400,6 +479,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BF37B8007879AA28740ADE08 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		533AF84FDAE85A380E24C84A /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BF37B8007879AA28740ADE08 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 306B5D2BE47E6FC40BF952A4 /* Project object */;
 }

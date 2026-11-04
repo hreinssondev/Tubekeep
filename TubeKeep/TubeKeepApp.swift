@@ -24,6 +24,7 @@ struct TubeKeepApp: App {
             CommandGroup(after: .newItem) {
                 Button("Add Link from Clipboard") { library.addFromClipboard() }
                     .keyboardShortcut("v", modifiers: [.command, .shift])
+                Button("Save Video Playing in Browser") { Task { await library.savePlayingVideo() } }
                 Button("New Folder") { library.newFolderRequest += 1 }
                     .keyboardShortcut("n", modifiers: [.command, .shift])
             }
