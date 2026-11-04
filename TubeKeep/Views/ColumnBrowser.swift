@@ -29,7 +29,8 @@ struct ColumnBrowser: View {
                                 renaming: $renaming,
                                 confirmingDelete: $confirmingDelete,
                                 open: { open($0, in: index, tree: tree) },
-                                back: { back(from: index) }
+                                back: { back(from: index) },
+                                newFolder: { newFolder(inColumn: index) }
                             )
                             .focused($focus, equals: index)
                             .frame(width: widths[index] ?? defaultWidth(parent))
@@ -106,6 +107,15 @@ struct ColumnBrowser: View {
         focus = index - 1
     }
 
+    /// Creates a folder in the column at `index` (inside the folder it shows, or at the top level) and selects it there.
+    private func newFolder(inColumn index: Int) {
+        let parent: Folder? = if case .folder(let uid)? = columnParents[safe: index] ?? nil { library.folder(uid) } else { nil }
+        let folder = library.newFolder(in: parent)
+        path = Array(path.prefix(index)) + [.folder(folder.uid)]
+        focus = index
+        renaming = folder
+    }
+
     /// Creates a folder inside the deepest selected folder, or at the top level.
     private func newFolder() {
         var parent: Folder?
@@ -133,6 +143,9 @@ private struct BrowserColumn: View {
     @Binding var confirmingDelete: Node?
     let open: (Node) -> Void
     let back: () -> Void
+    let newFolder: () -> Void
+
+    @State private var height: CGFloat = 200
 
     /// The folder this column shows, which drops on empty space go into.
     private var containerFolder: Folder? {
@@ -140,8 +153,20 @@ private struct BrowserColumn: View {
     }
 
     var body: some View {
+        // Drops go on rows or between them: a List never hands drops to a destination on the List itself.
         List(selection: $selection) {
-            if let parent {
+            if let parent, let containerFolder, tree.children(of: parent).isEmpty {
+                // With no rows there's nowhere to drop, so the hint is a row that fills the column and takes drops.
+                Text("Drag videos here")
+                    .foregroundStyle(.tertiary)
+                    .font(.callout)
+                    .frame(maxWidth: .infinity, minHeight: max(height - 24, 44))
+                    .selectionDisabled()
+                    .dropDestination(for: String.self) { items, _ in library.handleDrop(items, into: containerFolder) }
+            } else if let parent, let containerFolder {
+                ForEach(tree.children(of: parent), id: \.self, content: row)
+                    .dropDestination(for: String.self) { items, _ in _ = library.handleDrop(items, into: containerFolder) }
+            } else if let parent {
                 ForEach(tree.children(of: parent), id: \.self, content: row)
             } else {
                 Section("Library") {
@@ -150,31 +175,27 @@ private struct BrowserColumn: View {
                     ForEach([Node.byDate], id: \.self, content: row)
                 }
                 Section("Folders") {
+                    // No drops between these rows: near a row's edge they'd go there instead of into the folder.
                     ForEach(tree.rootFolders, id: \.self, content: row)
                 }
             }
         }
         .listStyle(.sidebar)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
         .overlay {
-            if let parent, tree.children(of: parent).isEmpty {
-                Text(emptyText).foregroundStyle(.tertiary).font(.callout)
+            if let parent, containerFolder == nil, tree.children(of: parent).isEmpty {
+                Text("No videos").foregroundStyle(.tertiary).font(.callout).allowsHitTesting(false)
             }
         }
         .contextMenu(forSelectionType: Node.self) { nodes in
             if let node = nodes.first {
                 menu(for: node)
             } else if parent == nil || containerFolder != nil {
-                Button("New Folder") { library.newFolderRequest += 1 }
+                // Right-clicking a column's empty space makes the folder in that column.
+                Button("New Folder", action: newFolder)
             }
         } primaryAction: { nodes in
             if let node = nodes.first { open(node) }
-        }
-        .dropDestination(for: String.self) { items, _ in
-            if parent == nil || containerFolder != nil {
-                library.handleDrop(items, into: containerFolder)
-            } else {
-                false
-            }
         }
         .onKeyPress(.rightArrow) {
             guard let selection, !selection.isLeaf else { return .ignored }
@@ -193,10 +214,6 @@ private struct BrowserColumn: View {
         .onDeleteCommand {
             if let selection { confirmingDelete = selection }
         }
-    }
-
-    private var emptyText: String {
-        if case .folder? = parent { "Drag videos here" } else { "No videos" }
     }
 
     @ViewBuilder
@@ -220,6 +237,7 @@ private struct BrowserColumn: View {
                     .draggable(DragPayload.video(id: id, from: containerFolder?.uid).string) {
                         Label(video.title, systemImage: "play.rectangle")
                     }
+                    .modifier(DropInto(folder: containerFolder))
             }
         }
     }
@@ -248,6 +266,20 @@ private struct BrowserColumn: View {
             }
         case .byDate, .day:
             Button("New Folder") { library.newFolderRequest += 1 }
+        }
+    }
+}
+
+/// In a folder's column, a drop onto a video row goes into the folder, like a drop between rows.
+private struct DropInto: ViewModifier {
+    @Environment(Library.self) private var library
+    let folder: Folder?
+
+    func body(content: Content) -> some View {
+        if let folder {
+            content.dropDestination(for: String.self) { items, _ in library.handleDrop(items, into: folder) }
+        } else {
+            content
         }
     }
 }
