@@ -3,7 +3,7 @@ import KeyboardShortcuts
 import UserNotifications
 
 extension KeyboardShortcuts.Name {
-    static let savePlayingVideo = Self("savePlayingVideo", initial: .init(.y, modifiers: [.command, .option]))
+    static let savePlayingVideo = Self("savePlayingVideo", initial: .init(.s, modifiers: [.command, .shift]))
 }
 
 /// Finds the YouTube video you're watching in a browser, without a browser extension.
