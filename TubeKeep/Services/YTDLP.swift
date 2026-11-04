@@ -17,46 +17,66 @@ enum YTDLP {
     static func watchURL(_ id: String) -> String { "https://www.youtube.com/watch?v=\(id)" }
 
     /// AVPlayer can't play VP9, so stick to H.264, or AV1 above 1080p where the Mac decodes it in hardware.
-    static func formatArguments(maxHeight: Int) -> [String] {
+    static func formatSelector(maxHeight: Int) -> String {
         let avc = "bv*[vcodec^=avc1][height<=\(maxHeight)]+ba[ext=m4a]/b[ext=mp4][height<=\(maxHeight)]"
         if maxHeight > 1080 && Media.decodesAV1 {
-            return ["-f", "bv*[vcodec^=av01][height<=\(maxHeight)]+ba[ext=m4a]/\(avc)"]
+            return "bv*[vcodec^=av01][height<=\(maxHeight)]+ba[ext=m4a]/\(avc)"
         }
-        return ["-f", avc]
+        return avc
     }
 
-    /// Downloads the video into its `.incoming` folder and returns the info for the finished `dl.mp4`.
+    /// A file yt-dlp finished, reported by its `--print after_move` line.
+    struct Finished {
+        let file: URL
+        let height: Int?
+    }
+
+    /// Downloads the video into its `.incoming` folder and returns the full-quality file.
+    /// With `previewHeight`, a small copy is fetched first in the same run (YouTube is only asked once)
+    /// and handed to `onPreview` so playback can start while the full quality downloads.
     /// `onInfo` fires as soon as the metadata and thumbnail are on disk, before the video itself.
     static func download(
         id: String,
         maxHeight: Int,
+        previewHeight: Int?,
         onInfo: @escaping @Sendable (VideoInfo) -> Void,
+        onPreview: @escaping @Sendable (Finished) -> Void,
         onProgress: @escaping @Sendable (Double) -> Void
-    ) async throws -> VideoInfo {
+    ) async throws -> (info: VideoInfo, file: Finished) {
         let dir = Paths.incoming(id)
         Paths.remove(dir)
         Paths.ensure(dir)
         let tracker = ProgressTracker()
+        var formats = formatSelector(maxHeight: maxHeight)
+        if let previewHeight {
+            formats = formatSelector(maxHeight: previewHeight) + "," + formats
+        }
         let arguments = [
             "--no-playlist", "--newline", "--no-mtime", "--no-warnings",
+            // --print would otherwise make yt-dlp quiet and skip the download.
+            "--no-simulate", "--progress",
             "--ffmpeg-location", Paths.bin.path,
             "--write-info-json", "--write-thumbnail", "--convert-thumbnails", "jpg",
             "--merge-output-format", "mp4",
             "--progress-template", "download:TKP %(info.format_id)s %(progress.downloaded_bytes)s %(progress.total_bytes)s %(progress.total_bytes_estimate)s",
-            "-P", dir.path, "-o", "dl.%(ext)s",
-        ] + formatArguments(maxHeight: maxHeight) + ["--", watchURL(id)]
+            "--print", "after_move:TKF %(height)s %(filepath)s",
+            "-P", dir.path, "-o", "dl.%(format_id)s.%(ext)s", "-o", "infojson:dl", "-o", "thumbnail:dl",
+            "-f", formats, "--", watchURL(id),
+        ]
 
         _ = try await ProcessRunner.run(executable, arguments) { line in
             if line.hasPrefix("TKP ") {
+                // The metadata and thumbnail are written before the first byte of video.
+                if tracker.claimInfo(), let info = adoptInfo(id) { onInfo(info) }
                 if let fraction = tracker.update(line) { onProgress(fraction) }
-            } else if line.hasPrefix("[download] Destination:"), tracker.claimInfo(), let info = adoptInfo(id) {
-                onInfo(info)
+            } else if line.hasPrefix("TKF "), let finished = Finished(line) {
+                if tracker.finished(finished) == 1, previewHeight != nil { onPreview(finished) }
             }
         }
-        guard let info = adoptInfo(id), Paths.exists(dir.appending(path: "dl.mp4")) else {
+        guard let info = adoptInfo(id), let file = tracker.last else {
             throw CocoaError(.fileNoSuchFile)
         }
-        return info
+        return (info, file)
     }
 
     /// Copies the metadata and thumbnail from `.incoming` into the video's folder.
@@ -86,7 +106,7 @@ enum YTDLP {
         do {
             _ = try await ProcessRunner.run(
                 executable,
-                ["--simulate", "--no-playlist", "--no-warnings", "-q"] + formatArguments(maxHeight: maxHeight) + ["--", watchURL(id)]
+                ["--simulate", "--no-playlist", "--no-warnings", "-q", "-f", formatSelector(maxHeight: maxHeight), "--", watchURL(id)]
             )
             return true
         } catch let failure as ProcessRunner.Failure where isUnavailable(failure) {
@@ -112,6 +132,7 @@ private final class ProgressTracker: @unchecked Sendable {
     private var order: [String] = []
     private var infoClaimed = false
     private var lastReported = -1.0
+    private var files: [YTDLP.Finished] = []
 
     func update(_ line: String) -> Double? {
         let parts = line.split(separator: " ").map(String.init)
@@ -128,10 +149,34 @@ private final class ProgressTracker: @unchecked Sendable {
         return fraction
     }
 
+    /// Records a finished file and returns how many have finished. Progress starts over after each,
+    /// so once the preview is in, it tracks the full-quality download alone.
+    func finished(_ file: YTDLP.Finished) -> Int {
+        lock.lock(); defer { lock.unlock() }
+        files.append(file)
+        streams.removeAll()
+        lastReported = -1
+        return files.count
+    }
+
+    var last: YTDLP.Finished? {
+        lock.lock(); defer { lock.unlock() }
+        return files.last
+    }
+
     /// True the first time it's called.
     func claimInfo() -> Bool {
         lock.lock(); defer { lock.unlock() }
         defer { infoClaimed = true }
         return !infoClaimed
+    }
+}
+
+extension YTDLP.Finished {
+    /// Parses "TKF <height> <path>"; the path may contain spaces.
+    init?(_ line: String) {
+        let parts = line.split(separator: " ", maxSplits: 2).map(String.init)
+        guard parts.count == 3 else { return nil }
+        self.init(file: URL(filePath: parts[2]), height: Int(parts[1]))
     }
 }

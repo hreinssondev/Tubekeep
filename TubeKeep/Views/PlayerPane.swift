@@ -85,7 +85,7 @@ private struct QualityBadge: View {
         let text: String? = switch player.source {
         case .high?: video.highHeight.map { "\($0)p" }
         case .low?:
-            if let job, job.kind == .upgrade {
+            if let job, job.kind != .downgrade {
                 "\(video.lowHeight ?? 480)p · getting HD \(job.progress.formatted(.percent.precision(.fractionLength(0))))"
             } else if video.unavailableUpstream {
                 "\(video.lowHeight ?? 480)p · original removed from YouTube"

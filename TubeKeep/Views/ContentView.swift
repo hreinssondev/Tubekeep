@@ -53,7 +53,10 @@ struct ContentView: View {
             StatusBar()
         }
         .dropDestination(for: URL.self) { urls, _ in
-            library.handleDrop(urls.map(\.absoluteString), into: nil)
+            let text = urls.map(\.absoluteString).joined(separator: " ")
+            guard !Link.all(in: text).isEmpty else { return false }
+            add(text)
+            return true
         }
         .onChange(of: renaming) { _, folder in newName = folder?.name ?? "" }
         .alert("Rename Folder", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
@@ -73,8 +76,18 @@ struct ContentView: View {
     }
 
     private func addLink() {
-        library.add(link)
+        add(link)
         link = ""
+    }
+
+    /// Adds links typed, pasted or dropped into the window. A single new video is selected and starts
+    /// playing as soon as its preview arrives, unless something else is playing.
+    private func add(_ text: String) {
+        library.add(text)
+        let links = Link.all(in: text)
+        guard links.count == 1, case .video(let id) = links[0], let video = library.video(id), !player.isPlaying else { return }
+        path = [.byDate, .day(Calendar.current.startOfDay(for: video.savedAt)), .video(id)]
+        player.show(video, autoplay: true)
     }
 
     private var deleteTitle: String {

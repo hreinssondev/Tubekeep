@@ -26,6 +26,11 @@ final class Library {
     @ObservationIgnored private let upgradeGate = Gate(2)
     @ObservationIgnored private let transcodeGate = Gate(1)
     @ObservationIgnored private var retentionTimer: Timer?
+    /// Moving a preview into place; finishing the download waits for it.
+    @ObservationIgnored private var previewTasks: [String: Task<Void, Never>] = [:]
+
+    /// Height of the quick copy a new download fetches first, so it can play within seconds.
+    static let previewHeight = 360
 
     var context: ModelContext { container.mainContext }
 
@@ -156,7 +161,8 @@ final class Library {
 
     // MARK: Jobs
 
-    /// Fetches the high-quality copy: the first download, or an upgrade of a downgraded video.
+    /// Fetches the high-quality copy: the first download (after a quick preview copy), or an upgrade
+    /// of a downgraded video.
     func download(_ video: Video) {
         let id = video.videoID
         guard jobs[id] == nil, tools.isReady else { return }
@@ -169,13 +175,16 @@ final class Library {
             await gate.acquire()
             do {
                 try Task.checkCancellation()
-                let info = try await YTDLP.download(
+                let result = try await YTDLP.download(
                     id: id,
                     maxHeight: maxHeight,
+                    previewHeight: kind == .download ? Self.previewHeight : nil,
                     onInfo: { info in Task { @MainActor in self.apply(info, to: id) } },
+                    onPreview: { preview in Task { @MainActor in self.adoptPreview(preview, for: id) } },
                     onProgress: { fraction in Task { @MainActor in self.jobs[id]?.progress = fraction } }
                 )
-                try await finishDownload(id, info: info)
+                await previewTasks[id]?.value
+                try await finishDownload(id, info: result.info, file: result.file)
             } catch is CancellationError {
             } catch {
                 if let video = self.video(id) {
@@ -183,6 +192,7 @@ final class Library {
                     video.failure = error.localizedDescription
                 }
             }
+            await previewTasks.removeValue(forKey: id)?.value
             Paths.remove(Paths.incoming(id))
             await gate.release()
             jobs[id] = nil
@@ -198,14 +208,31 @@ final class Library {
         video.hasThumbnail = Paths.exists(Paths.thumb(id))
     }
 
-    private func finishDownload(_ id: String, info: VideoInfo) async throws {
-        let file = Paths.incoming(id).appending(path: "dl.mp4")
-        try await Media.verify(file)
+    /// Puts the preview in place as the low copy and starts playback if the player is waiting for it.
+    private func adoptPreview(_ preview: YTDLP.Finished, for id: String) {
+        previewTasks[id] = Task {
+            guard (try? await Media.verify(preview.file)) != nil,
+                  let video = video(id), video.highBytes == nil, (try? Paths.move(preview.file, to: Paths.low(id))) != nil
+            else { return }
+            video.lowBytes = Paths.size(Paths.low(id))
+            video.lowHeight = preview.height
+            await player.filesChanged(video)
+            save()
+        }
+    }
+
+    private func finishDownload(_ id: String, info: VideoInfo, file: YTDLP.Finished) async throws {
         guard let video = video(id) else { return }
-        try Paths.move(file, to: Paths.high(id))
+        if !Paths.exists(file.file), video.lowBytes != nil {
+            // The video is no bigger than the preview, so yt-dlp reused that file: it's the full quality.
+            try Paths.move(Paths.low(id), to: Paths.high(id))
+        } else {
+            try await Media.verify(file.file)
+            try Paths.move(file.file, to: Paths.high(id))
+        }
         apply(info, to: id)
         video.highBytes = Paths.size(Paths.high(id))
-        video.highHeight = info.height
+        video.highHeight = file.height ?? info.height
         video.unavailableUpstream = false
         if video.lowBytes != nil {
             // Switch playback over before deleting the low copy it may be reading.
@@ -265,6 +292,12 @@ final class Library {
         jobs[id]?.task?.cancel()
     }
 
+    /// Stops every yt-dlp and ffmpeg process, so none outlive the app.
+    /// Unfinished downloads resume on the next launch.
+    func stopAllJobs() {
+        jobs.values.forEach { $0.task?.cancel() }
+    }
+
     /// Downgrades every video that's been saved and unplayed for longer than the retention interval.
     func runRetention() {
         guard tools.isReady else { return }
@@ -307,7 +340,9 @@ final class Library {
             video.lowBytes = low
             if low == nil { video.lowHeight = nil }
             video.hasThumbnail = Paths.exists(Paths.thumb(id))
-            if !video.isDownloaded, !video.unavailableUpstream {
+            // Also resumes downloads quit after the preview but before full quality
+            // (a downgraded video remembers its full-quality height; those wait until played).
+            if !video.unavailableUpstream, !video.isDownloaded || (video.lowBytes != nil && video.highHeight == nil) {
                 download(video)
             }
         }
