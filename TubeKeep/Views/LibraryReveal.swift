@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 /// How far the page has scrolled down from the video to the library: 0 shows only the video, 1 the whole library.
-/// Only vertical scrolling over the video moves it, so the browser's lists keep their own scrolling.
+/// Only vertical scrolling over the video or its title bar moves it, so the browser's lists keep their own scrolling.
 /// Scrolling over the video never reaches the player, which would pause and seek; the arrow keys seek.
 @MainActor @Observable
 final class LibraryReveal {
@@ -10,6 +10,8 @@ final class LibraryReveal {
     /// Points of scrolling between hidden and shown; the height the library takes up.
     @ObservationIgnored var distance: CGFloat = 500
     @ObservationIgnored weak var playerView: NSView?
+    /// The title bar under the video, which scrolls the page too.
+    @ObservationIgnored weak var infoView: NSView?
     @ObservationIgnored private var monitor: Any?
     /// The current trackpad gesture started over the video, so its momentum is ours too.
     @ObservationIgnored private var tracking = false
@@ -40,7 +42,7 @@ final class LibraryReveal {
         }
         if event.phase == [] {
             // A mouse wheel: no gesture phases, so snap once the wheel stops.
-            guard isOverPlayer(event) else { return event }
+            guard isOverScrollArea(event) else { return event }
             guard !isSideways(event) else { return nil }
             move(by: event.scrollingDeltaY * (event.hasPreciseScrollingDeltas ? 1 : 8))
             wheelSnap?.cancel()
@@ -51,7 +53,7 @@ final class LibraryReveal {
             return nil
         }
         if event.phase.contains(.began) || event.phase.contains(.mayBegin) {
-            tracking = isOverPlayer(event)
+            tracking = isOverScrollArea(event)
             vertical = nil
             velocity = 0
         }
@@ -84,10 +86,25 @@ final class LibraryReveal {
         abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY)
     }
 
-    private func isOverPlayer(_ event: NSEvent) -> Bool {
-        // The video's top scrolls up under the toolbar, which doesn't count.
-        guard let view = playerView, let window = view.window, event.window === window,
-              window.contentLayoutRect.contains(event.locationInWindow) else { return false }
-        return view.bounds.contains(view.convert(event.locationInWindow, from: nil))
+    private func isOverScrollArea(_ event: NSEvent) -> Bool {
+        [playerView, infoView].contains { view in
+            // The page's top scrolls up under the toolbar, which doesn't count.
+            guard let view, let window = view.window, event.window === window,
+                  window.contentLayoutRect.contains(event.locationInWindow) else { return false }
+            return view.bounds.contains(view.convert(event.locationInWindow, from: nil))
+        }
     }
+}
+
+/// Marks the view it's the background of as a place where scrolling moves the page.
+struct PageScrollArea: NSViewRepresentable {
+    let reveal: LibraryReveal
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        reveal.infoView = view
+        return view
+    }
+
+    func updateNSView(_ view: NSView, context: Context) {}
 }

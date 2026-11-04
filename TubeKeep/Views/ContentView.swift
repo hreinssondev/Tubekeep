@@ -12,7 +12,7 @@ struct ContentView: View {
 
     var body: some View {
         // A page: the video and its title bar fill the window and the library sits below them. Scrolling
-        // down over the video scrolls the page up to the library; the video keeps its size and just moves.
+        // down over the video or its title bar scrolls the page up to the library; the video keeps its size and just moves.
         GeometryReader { geometry in
             let video = player.videoID.flatMap(library.video)
             let info = video == nil ? 0 : infoHeight
@@ -25,6 +25,7 @@ struct ContentView: View {
                         VideoInfoPanel(video: video)
                         Divider()
                     }
+                    .background(PageScrollArea(reveal: reveal))
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { infoHeight = $0 }
                 }
                 ColumnBrowser(path: $path, renaming: $renaming, confirmingDelete: $confirmingDelete)
