@@ -227,9 +227,7 @@ private struct BrowserColumn: View {
             if let folder = tree.folders[uid] {
                 ContainerRow(title: folder.name, systemImage: "folder", count: folder.children.count + folder.videos.count)
                     .draggable(DragPayload.folder(uid).string)
-                    .dropDestination(for: String.self) { items, _ in
-                        library.handleDrop(items, into: folder)
-                    }
+                    .modifier(FolderDropTarget(folder: folder))
             }
         case .video(let id):
             if let video = tree.videos[id] {
@@ -267,6 +265,28 @@ private struct BrowserColumn: View {
         case .byDate, .day:
             Button("New Folder") { library.newFolderRequest += 1 }
         }
+    }
+}
+
+/// Drops onto a folder row go into the folder, which lights up while something is dragged over it.
+private struct FolderDropTarget: ViewModifier {
+    @Environment(Library.self) private var library
+    let folder: Folder
+    @State private var isTargeted = false
+
+    func body(content: Content) -> some View {
+        content
+            .background {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.accentColor.opacity(isTargeted ? 0.35 : 0))
+                    .padding(.horizontal, -6)
+                    .padding(.vertical, -3)
+            }
+            .animation(.easeOut(duration: 0.12), value: isTargeted)
+            .dropDestination(for: String.self) { items, _ in
+                isTargeted = false
+                return library.handleDrop(items, into: folder)
+            } isTargeted: { isTargeted = $0 }
     }
 }
 
