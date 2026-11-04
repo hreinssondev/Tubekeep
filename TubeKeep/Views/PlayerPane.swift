@@ -4,43 +4,41 @@ import AVKit
 struct PlayerPane: View {
     @Environment(Library.self) private var library
     @Environment(PlayerController.self) private var player
+    @Environment(LibraryReveal.self) private var reveal
 
     var body: some View {
         let video = player.videoID.flatMap(library.video)
-        VStack(spacing: 0) {
-            ZStack(alignment: .topTrailing) {
-                PlayerView(player: player.player)
-                if let video {
-                    if player.source == .waiting {
-                        WaitingOverlay(video: video)
-                    }
-                    QualityBadge(video: video)
-                        .padding(10)
-                }
-            }
-            .overlay {
-                if video == nil {
-                    ContentUnavailableView(
-                        "Nothing Playing",
-                        systemImage: "play.rectangle",
-                        description: Text("Paste a YouTube link in the toolbar, then double-click a video to play it.")
-                    )
-                    .environment(\.colorScheme, .dark)
-                }
-            }
-            .background(.black)
+        ZStack(alignment: .topTrailing) {
+            PlayerView(player: player.player, reveal: reveal)
             if let video {
-                VideoInfoPanel(video: video)
+                if player.source == .waiting {
+                    WaitingOverlay(video: video)
+                }
+                QualityBadge(video: video)
+                    .padding(10)
             }
         }
+        .overlay {
+            if video == nil {
+                ContentUnavailableView(
+                    "Nothing Playing",
+                    systemImage: "play.rectangle",
+                    description: Text("Paste a YouTube link in the toolbar, then double-click a video to play it.")
+                )
+                .environment(\.colorScheme, .dark)
+            }
+        }
+        .background(.black)
     }
 }
 
 private struct PlayerView: NSViewRepresentable {
     let player: AVPlayer
+    let reveal: LibraryReveal
 
     func makeNSView(context: Context) -> AVPlayerView {
         let view = AVPlayerView()
+        reveal.playerView = view
         view.player = player
         view.controlsStyle = .floating
         view.showsFullScreenToggleButton = true
@@ -108,7 +106,7 @@ private struct QualityBadge: View {
     }
 }
 
-private struct VideoInfoPanel: View {
+struct VideoInfoPanel: View {
     @Environment(Library.self) private var library
     let video: Video
 

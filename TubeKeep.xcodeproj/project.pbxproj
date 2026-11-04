@@ -13,6 +13,7 @@
 		3DF23D1A3DD72AC058C533F7 /* YTDLP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61B3932D56291AAA381C2F02 /* YTDLP.swift */; };
 		425E53712E83378F03EFCE79 /* PlayerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD365B721C176628B38F2EBF /* PlayerController.swift */; };
 		53C74C4ED78C66F3C04B040E /* Video.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77BB516341D58D4B9ECBBBCC /* Video.swift */; };
+		60D80F5EF4BB49999A819025 /* LibraryReveal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 892C3243B0FD51AB66B3000D /* LibraryReveal.swift */; };
 		69A4D2D2B48A15F5FE337134 /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBCC47AE59CA0B369DAFEAD1 /* Library.swift */; };
 		7150F7094F9F9BE8D1F550D6 /* TubeKeepApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E636EA77D63AE51ECBCE32D5 /* TubeKeepApp.swift */; };
 		721D3BECDAA283B1467845EE /* Folder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CB7FC96B8A4B21FCD0F60BF /* Folder.swift */; };
@@ -42,6 +43,7 @@
 		77BB516341D58D4B9ECBBBCC /* Video.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Video.swift; sourceTree = "<group>"; };
 		7C5712660E39D7A201ACB858 /* Prefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prefs.swift; sourceTree = "<group>"; };
 		83EBFE8F210E7101881B4728 /* VideoRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoRow.swift; sourceTree = "<group>"; };
+		892C3243B0FD51AB66B3000D /* LibraryReveal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryReveal.swift; sourceTree = "<group>"; };
 		9504A029107DE2756BA25AD0 /* Media.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Media.swift; sourceTree = "<group>"; };
 		A518A7B2AC7189C8B8069BC6 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A6BE6A126E439F04BCB11840 /* TubeKeep.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TubeKeep.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -104,6 +106,7 @@
 			children = (
 				0EB609F11F438DF6093C86E9 /* ColumnBrowser.swift */,
 				A518A7B2AC7189C8B8069BC6 /* ContentView.swift */,
+				892C3243B0FD51AB66B3000D /* LibraryReveal.swift */,
 				51D20AB927628DABC9346FAC /* PlayerPane.swift */,
 				B86353C6E3A27C64483DFCB8 /* SettingsView.swift */,
 				AE01FB6717CFF52D96D25DFA /* Tree.swift */,
@@ -195,6 +198,7 @@
 				E48E9BDF3A2A916C588C4B0D /* ContentView.swift in Sources */,
 				721D3BECDAA283B1467845EE /* Folder.swift in Sources */,
 				69A4D2D2B48A15F5FE337134 /* Library.swift in Sources */,
+				60D80F5EF4BB49999A819025 /* LibraryReveal.swift in Sources */,
 				0F6B1F97E0E4278BEC36180F /* Links.swift in Sources */,
 				2A37D286791CB7730AAB3109 /* Media.swift in Sources */,
 				F6CB392DB4EEDA20937BDC07 /* Paths.swift in Sources */,

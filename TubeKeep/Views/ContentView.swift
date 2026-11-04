@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(Library.self) private var library
+    @Environment(PlayerController.self) private var player
+    @Environment(LibraryReveal.self) private var reveal
     @State private var path: [Node] = [.byDate]
     @State private var link = ""
     @State private var renaming: Folder?
@@ -9,11 +11,25 @@ struct ContentView: View {
     @State private var confirmingDelete: Node?
 
     var body: some View {
-        HSplitView {
-            ColumnBrowser(path: $path, renaming: $renaming, confirmingDelete: $confirmingDelete)
-                .frame(minWidth: 420, idealWidth: 760, maxHeight: .infinity)
-            PlayerPane()
-                .frame(minWidth: 480, idealWidth: 720, maxHeight: .infinity)
+        // The video fills the window; scrolling down over it slides the library up underneath.
+        GeometryReader { geometry in
+            let height = (geometry.size.height * 0.62).rounded()
+            let shown = reveal.progress * height
+            VStack(spacing: 0) {
+                PlayerPane()
+                    .frame(height: geometry.size.height - shown)
+                VStack(spacing: 0) {
+                    if let video = player.videoID.flatMap(library.video) {
+                        VideoInfoPanel(video: video)
+                        Divider()
+                    }
+                    ColumnBrowser(path: $path, renaming: $renaming, confirmingDelete: $confirmingDelete)
+                }
+                .frame(height: height, alignment: .top)
+                .frame(height: shown, alignment: .top)
+                .clipped()
+            }
+            .onChange(of: height, initial: true) { reveal.distance = height }
         }
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -25,6 +41,12 @@ struct ContentView: View {
             ToolbarItem {
                 Button("New Folder", systemImage: "folder.badge.plus") { library.newFolderRequest += 1 }
                     .help("New Folder (⇧⌘N)")
+            }
+            ToolbarItem {
+                Button(reveal.isShown ? "Hide Library" : "Show Library", systemImage: "rectangle.bottomhalf.inset.filled") {
+                    reveal.toggle()
+                }
+                .help("Show or hide the library (⌘L), or scroll over the video")
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {

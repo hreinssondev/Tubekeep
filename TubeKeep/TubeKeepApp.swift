@@ -4,6 +4,7 @@ import SwiftData
 @main
 struct TubeKeepApp: App {
     @State private var library = Library()
+    @State private var reveal = LibraryReveal()
 
     init() {
         Prefs.registerDefaults()
@@ -14,6 +15,7 @@ struct TubeKeepApp: App {
             ContentView()
                 .environment(library)
                 .environment(library.player)
+                .environment(reveal)
                 .modelContainer(library.container)
                 .onOpenURL { library.handle(openURL: $0) }
         }
@@ -24,6 +26,11 @@ struct TubeKeepApp: App {
                     .keyboardShortcut("v", modifiers: [.command, .shift])
                 Button("New Folder") { library.newFolderRequest += 1 }
                     .keyboardShortcut("n", modifiers: [.command, .shift])
+            }
+            CommandGroup(before: .toolbar) {
+                Button(reveal.isShown ? "Hide Library" : "Show Library") { reveal.toggle() }
+                    .keyboardShortcut("l")
+                Divider()
             }
         }
 
