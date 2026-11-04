@@ -50,13 +50,14 @@ final class PlayerController {
     }
 
     /// Called after a video's files change. Swaps the open item in place, keeping position and play state.
-    func filesChanged(_ video: Video, preferLow: Bool = false) async {
+    /// `reload` swaps even when the source stays the same, for a file that was replaced.
+    func filesChanged(_ video: Video, preferLow: Bool = false, reload: Bool = false) async {
         guard videoID == video.videoID else { return }
         if source == .waiting {
             load(video, autoplay: autoplayWhenReady)
             return
         }
-        guard let (url, newSource) = file(for: video, preferLow: preferLow), newSource != source else { return }
+        guard let (url, newSource) = file(for: video, preferLow: preferLow), newSource != source || reload else { return }
         // The stream adapts to the connection and usually beats the preview, so it plays until full quality is in.
         if source == .stream, newSource != .high { return }
         await swap(to: url)
@@ -81,7 +82,13 @@ final class PlayerController {
         self.source = source
         let item = AVPlayerItem(url: url)
         observeEnd(of: item)
-        if source == .stream { observeFailure(of: item, id: video.videoID) }
+        if source == .stream {
+            observeFailure(of: item, id: video.videoID)
+            // The stream adapts to the connection; it needn't go past the quality being downloaded.
+            if let height = library?.jobs[video.videoID]?.height {
+                item.preferredMaximumResolution = CGSize(width: (Double(height) * 16 / 9).rounded(.up), height: Double(height))
+            }
+        }
         player.replaceCurrentItem(with: item)
         let resume = video.resumePosition
         if resume > 3, video.duration == 0 || resume < video.duration - 5 {

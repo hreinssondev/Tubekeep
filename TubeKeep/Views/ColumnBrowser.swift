@@ -328,11 +328,16 @@ private struct ContainerRow: View {
     }
 }
 
-/// The quality new downloads are saved in, at the browser's right edge.
+/// The shown video's quality, at the browser's right edge. Picking another downloads it in that quality
+/// and replaces the current copy once it's in.
 private struct QualityColumn: View {
-    @AppStorage(Prefs.maxHeight) private var maxHeight = 480
+    @Environment(Library.self) private var library
+    @Environment(PlayerController.self) private var player
 
     var body: some View {
+        let video = player.videoID.flatMap(library.video)
+        let job = video.flatMap { library.jobs[$0.videoID] }
+        let current = video.flatMap { $0.highBytes != nil ? $0.highHeight : $0.lowHeight }
         VStack(spacing: 4) {
             Text("Quality")
                 .font(.caption)
@@ -340,10 +345,22 @@ private struct QualityColumn: View {
                 .padding(.bottom, 2)
             ForEach(Prefs.qualities, id: \.self) { height in
                 let needsAV1 = height > 1080 && !Media.decodesAV1
-                Button(String(height) + "p") { maxHeight = height }
-                    .buttonStyle(QualityButtonStyle(selected: height == maxHeight))
-                    .disabled(needsAV1)
-                    .help(needsAV1 ? "Needs a Mac that decodes AV1 in hardware" : "Save new videos in up to \(height)p")
+                let fetching = job?.height == height
+                Button {
+                    guard let video else { return }
+                    // Back to the quality on disk: just stop fetching another.
+                    if height == current { library.cancelJob(video.videoID) } else { library.changeQuality(video, to: height) }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(verbatim: "\(height)p")
+                        if fetching, let job {
+                            ProgressView(value: job.progress).progressViewStyle(.circular).controlSize(.mini)
+                        }
+                    }
+                }
+                .buttonStyle(QualityButtonStyle(selected: height == current, fetching: fetching))
+                .disabled(video == nil || needsAV1 || fetching || (height == current && job == nil))
+                .help(needsAV1 ? "Needs a Mac that decodes AV1 in hardware" : "Download this video in \(height)p, replacing the current copy")
             }
             Spacer(minLength: 0)
         }
@@ -354,6 +371,7 @@ private struct QualityColumn: View {
 
 private struct QualityButtonStyle: ButtonStyle {
     let selected: Bool
+    let fetching: Bool
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
@@ -361,11 +379,14 @@ private struct QualityButtonStyle: ButtonStyle {
             .font(.callout.monospacedDigit().weight(selected ? .semibold : .regular))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 3)
-            .foregroundStyle(selected ? AnyShapeStyle(.white) : AnyShapeStyle(isEnabled ? .primary : .tertiary))
+            .foregroundStyle(selected ? AnyShapeStyle(.white) : AnyShapeStyle(isEnabled || fetching ? .primary : .tertiary))
             .background(
                 RoundedRectangle(cornerRadius: 5)
                     .fill(selected ? AnyShapeStyle(.tint) : AnyShapeStyle(.quaternary.opacity(configuration.isPressed ? 1 : 0.5)))
             )
+            .overlay {
+                if fetching { RoundedRectangle(cornerRadius: 5).strokeBorder(.tint) }
+            }
             .contentShape(Rectangle())
     }
 }

@@ -61,7 +61,7 @@ struct StatusBadge: View {
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
-                    .help(job.kind == .download ? "Cancel and delete this download" : "Cancel the upgrade")
+                    .help(job.kind == .download ? "Cancel and delete this download" : "Cancel and keep the current copy")
                 }
             } else if video.failure != nil, !video.isDownloaded {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)

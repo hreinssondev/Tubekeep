@@ -115,19 +115,27 @@ private struct QualityBadge: View {
 
     var body: some View {
         let job = library.jobs[video.videoID]
+        let getting = job.flatMap { job in
+            job.height.map { "getting \($0)p \(job.progress.formatted(.percent.precision(.fractionLength(0))))" }
+        }
         let text: String? = switch player.source {
-        case .high?: video.highHeight.map { "\($0)p" }
+        case .high?:
+            if let getting, let height = video.highHeight {
+                "\(height)p · \(getting)"
+            } else {
+                video.highHeight.map { "\($0)p" }
+            }
         case .low?:
-            if let job, job.kind != .downgrade {
-                "\(video.lowHeight ?? 480)p · getting HD \(job.progress.formatted(.percent.precision(.fractionLength(0))))"
+            if let getting {
+                "\(video.lowHeight ?? 480)p · \(getting)"
             } else if video.unavailableUpstream {
                 "\(video.lowHeight ?? 480)p · original removed from YouTube"
             } else {
                 "\(video.lowHeight ?? 480)p"
             }
         case .stream?:
-            if let job, library.isGettingHD(video.videoID) {
-                "Streaming · getting HD \(job.progress.formatted(.percent.precision(.fractionLength(0))))"
+            if let getting, library.isGettingHD(video.videoID) {
+                "Streaming · \(getting)"
             } else {
                 "Streaming"
             }

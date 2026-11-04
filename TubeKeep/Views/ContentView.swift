@@ -9,23 +9,27 @@ struct ContentView: View {
     @State private var renaming: Folder?
     @State private var newName = ""
     @State private var confirmingDelete: Node?
+    @State private var infoHeight: CGFloat = 0
 
     var body: some View {
-        // A page: the video fills the window and the library sits below it. Scrolling down over the video
-        // scrolls the page up to the library; the video keeps its size and just moves.
+        // A page: the video and its title bar fill the window and the library sits below them. Scrolling
+        // down over the video scrolls the page up to the library; the video keeps its size and just moves.
         GeometryReader { geometry in
-            let height = (geometry.size.height * 0.62).rounded()
+            let video = player.videoID.flatMap(library.video)
+            let info = video == nil ? 0 : infoHeight
+            let height = (geometry.size.height * 0.62).rounded() - info
             VStack(spacing: 0) {
                 PlayerPane()
-                    .frame(height: geometry.size.height)
-                VStack(spacing: 0) {
-                    if let video = player.videoID.flatMap(library.video) {
+                    .frame(height: geometry.size.height - info)
+                if let video {
+                    VStack(spacing: 0) {
                         VideoInfoPanel(video: video)
                         Divider()
                     }
-                    ColumnBrowser(path: $path, renaming: $renaming, confirmingDelete: $confirmingDelete)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { infoHeight = $0 }
                 }
-                .frame(height: height, alignment: .top)
+                ColumnBrowser(path: $path, renaming: $renaming, confirmingDelete: $confirmingDelete)
+                    .frame(height: height, alignment: .top)
             }
             .frame(height: geometry.size.height, alignment: .top)
             .offset(y: -reveal.progress * height)

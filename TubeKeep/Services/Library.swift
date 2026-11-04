@@ -9,6 +9,8 @@ final class Library {
     struct Job {
         enum Kind { case download, upgrade, downgrade }
         let kind: Kind
+        /// The quality being fetched; nil for downgrades.
+        var height: Int?
         var progress: Double = 0
         var task: Task<Void, Never>?
     }
@@ -50,7 +52,7 @@ final class Library {
     /// The video's download is past its preview (or is an upgrade): it plays, and full quality is on the way.
     func isGettingHD(_ id: String) -> Bool {
         guard let job = jobs[id], job.kind != .downgrade else { return false }
-        return video(id)?.lowBytes != nil
+        return video(id)?.isDownloaded == true
     }
 
     init() {
@@ -182,15 +184,14 @@ final class Library {
     // MARK: Jobs
 
     /// Fetches the high-quality copy: the first download (after a quick preview copy), or an upgrade
-    /// of a downgraded video.
-    func download(_ video: Video) {
+    /// that replaces the copy on disk once it's in (a downgraded video, or a quality change).
+    func download(_ video: Video, maxHeight: Int = Prefs.currentMaxHeight) {
         let id = video.videoID
         guard jobs[id] == nil, tools.isReady else { return }
-        let kind: Job.Kind = video.lowBytes == nil ? .download : .upgrade
+        let kind: Job.Kind = video.isDownloaded ? .upgrade : .download
         video.failure = nil
         let gate = kind == .upgrade ? upgradeGate : downloadGate
-        let maxHeight = Prefs.currentMaxHeight
-        jobs[id] = Job(kind: kind)
+        jobs[id] = Job(kind: kind, height: maxHeight)
         jobs[id]?.task = Task {
             await gate.acquire()
             do {
@@ -221,6 +222,19 @@ final class Library {
             await gate.release()
             jobs[id] = nil
             save()
+        }
+    }
+
+    /// Downloads the video again in `height`; the current copy is replaced once the new one is in.
+    /// Any running job for it is stopped first, so a download in progress restarts at that height.
+    func changeQuality(_ video: Video, to height: Int) {
+        let id = video.videoID
+        let running = jobs[id]?.task
+        running?.cancel()
+        Task {
+            await running?.value
+            guard let video = self.video(id) else { return }
+            download(video, maxHeight: height)
         }
     }
 
@@ -270,14 +284,15 @@ final class Library {
         video.highBytes = Paths.size(Paths.high(id))
         video.highHeight = file.height ?? info.height
         video.unavailableUpstream = false
+        // A quality change replaced the high copy the player may be on, so it reloads even if that's the source already.
         if video.lowBytes != nil {
             // Switch playback over before deleting the low copy it may be reading.
-            await player.filesChanged(video)
+            await player.filesChanged(video, reload: true)
             Paths.remove(Paths.low(id))
             video.lowBytes = nil
             video.lowHeight = nil
         } else {
-            await player.filesChanged(video)
+            await player.filesChanged(video, reload: true)
         }
     }
 
