@@ -28,6 +28,8 @@ final class Library {
     @ObservationIgnored private var retentionTimer: Timer?
     /// Moving a preview into place; finishing the download waits for it.
     @ObservationIgnored private var previewTasks: [String: Task<Void, Never>] = [:]
+    /// YouTube's stream of each first download, played until a downloaded copy is in.
+    @ObservationIgnored private var streams: [String: URL] = [:]
 
     /// Height of the quick copy a new download fetches first, so it can play within seconds.
     static let previewHeight = 360
@@ -188,6 +190,7 @@ final class Library {
                     maxHeight: maxHeight,
                     previewHeight: kind == .download ? Self.previewHeight : nil,
                     onInfo: { info in Task { @MainActor in self.apply(info, to: id) } },
+                    onStream: { url in Task { @MainActor in self.adoptStream(url, for: id) } },
                     onPreview: { preview in Task { @MainActor in self.adoptPreview(preview, for: id) } },
                     onProgress: { fraction in Task { @MainActor in self.jobs[id]?.progress = fraction } }
                 )
@@ -201,6 +204,7 @@ final class Library {
                 }
             }
             await previewTasks.removeValue(forKey: id)?.value
+            streams[id] = nil
             Paths.remove(Paths.incoming(id))
             await gate.release()
             jobs[id] = nil
@@ -214,6 +218,18 @@ final class Library {
         if !info.channelName.isEmpty { video.channel = info.channelName }
         if let duration = info.duration { video.duration = duration }
         video.hasThumbnail = Paths.exists(Paths.thumb(id))
+    }
+
+    func stream(for id: String) -> URL? { streams[id] }
+
+    /// Forgets a stream that failed to play, so the player waits for the download instead.
+    func dropStream(_ id: String) { streams[id] = nil }
+
+    /// Starts playback from the stream if the player is waiting for the video.
+    private func adoptStream(_ url: URL, for id: String) {
+        guard jobs[id] != nil, let video = video(id) else { return }
+        streams[id] = url
+        Task { await player.filesChanged(video) }
     }
 
     /// Puts the preview in place as the low copy and starts playback if the player is waiting for it.

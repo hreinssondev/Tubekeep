@@ -100,6 +100,12 @@ private struct QualityBadge: View {
             } else {
                 "\(video.lowHeight ?? 480)p"
             }
+        case .stream?:
+            if let job, library.isGettingHD(video.videoID) {
+                "Streaming · getting HD \(job.progress.formatted(.percent.precision(.fractionLength(0))))"
+            } else {
+                "Streaming"
+            }
         default: nil
         }
         if let text {

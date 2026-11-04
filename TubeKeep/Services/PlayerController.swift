@@ -3,7 +3,7 @@ import Observation
 
 @MainActor @Observable
 final class PlayerController {
-    enum Source { case high, low, waiting }
+    enum Source { case high, low, stream, waiting }
 
     let player = AVPlayer()
     private(set) var videoID: String?
@@ -14,6 +14,7 @@ final class PlayerController {
     @ObservationIgnored private var autoplayWhenReady = false
     @ObservationIgnored private var timeObserver: Any?
     @ObservationIgnored private var statusObservation: NSKeyValueObservation?
+    @ObservationIgnored private var streamObservation: NSKeyValueObservation?
     @ObservationIgnored private var endObserver: NSObjectProtocol?
 
     init() {
@@ -56,6 +57,8 @@ final class PlayerController {
             return
         }
         guard let (url, newSource) = file(for: video, preferLow: preferLow), newSource != source else { return }
+        // The stream adapts to the connection and usually beats the preview, so it plays until full quality is in.
+        if source == .stream, newSource != .high { return }
         await swap(to: url)
         source = newSource
     }
@@ -68,15 +71,17 @@ final class PlayerController {
     }
 
     private func load(_ video: Video, autoplay: Bool) {
-        guard let (url, source) = file(for: video) else {
+        autoplayWhenReady = autoplay
+        streamObservation = nil
+        guard let (url, source) = file(for: video) ?? library?.stream(for: video.videoID).map({ ($0, .stream) }) else {
             player.replaceCurrentItem(with: nil)
             self.source = .waiting
-            autoplayWhenReady = autoplay
             return
         }
         self.source = source
         let item = AVPlayerItem(url: url)
         observeEnd(of: item)
+        if source == .stream { observeFailure(of: item, id: video.videoID) }
         player.replaceCurrentItem(with: item)
         let resume = video.resumePosition
         if resume > 3, video.duration == 0 || resume < video.duration - 5 {
@@ -94,9 +99,23 @@ final class PlayerController {
         let target = player.currentTime() + lead
         let item = AVPlayerItem(url: url)
         observeEnd(of: item)
+        streamObservation = nil
         player.replaceCurrentItem(with: item)
         await item.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero)
         if wasPlaying { player.rate = rate }
+    }
+
+    /// A stream that fails (e.g. YouTube refuses it) falls back to waiting for the download.
+    private func observeFailure(of item: AVPlayerItem, id: String) {
+        streamObservation = item.observe(\.status) { [weak self] item, _ in
+            guard item.status == .failed else { return }
+            Task { @MainActor in
+                guard let self, self.videoID == id, self.source == .stream, let video = self.library?.video(id) else { return }
+                self.library?.dropStream(id)
+                self.saveProgress()
+                self.load(video, autoplay: self.autoplayWhenReady)
+            }
+        }
     }
 
     private func observeEnd(of item: AVPlayerItem) {

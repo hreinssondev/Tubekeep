@@ -34,12 +34,14 @@ enum YTDLP {
     /// Downloads the video into its `.incoming` folder and returns the full-quality file.
     /// With `previewHeight`, a small copy is fetched first in the same run (YouTube is only asked once)
     /// and handed to `onPreview` so playback can start while the full quality downloads.
+    /// Before that, `onStream` gets YouTube's HLS stream of the video, which plays as soon as a few seconds have buffered.
     /// `onInfo` fires as soon as the metadata and thumbnail are on disk, before the video itself.
     static func download(
         id: String,
         maxHeight: Int,
         previewHeight: Int?,
         onInfo: @escaping @Sendable (VideoInfo) -> Void,
+        onStream: @escaping @Sendable (URL) -> Void,
         onPreview: @escaping @Sendable (Finished) -> Void,
         onProgress: @escaping @Sendable (Double) -> Void
     ) async throws -> (info: VideoInfo, file: Finished) {
@@ -51,7 +53,7 @@ enum YTDLP {
         if let previewHeight {
             formats = formatSelector(maxHeight: previewHeight) + "," + formats
         }
-        let arguments = [
+        var arguments = [
             "--no-playlist", "--newline", "--no-mtime", "--no-warnings",
             // --print would otherwise make yt-dlp quiet and skip the download.
             "--no-simulate", "--progress",
@@ -61,14 +63,21 @@ enum YTDLP {
             "--progress-template", "download:TKP %(info.format_id)s %(progress.downloaded_bytes)s %(progress.total_bytes)s %(progress.total_bytes_estimate)s",
             "--print", "after_move:TKF %(height)s %(filepath)s",
             "-P", dir.path, "-o", "dl.%(format_id)s.%(ext)s", "-o", "infojson:dl", "-o", "thumbnail:dl",
-            "-f", formats, "--", watchURL(id),
+            "-f", formats,
         ]
+        if previewHeight != nil {
+            // Printed once the formats are known, before anything downloads.
+            arguments += ["--print", "after_filter:TKS %(formats.:.manifest_url)j"]
+        }
+        arguments += ["--", watchURL(id)]
 
         _ = try await ProcessRunner.run(executable, arguments) { line in
             if line.hasPrefix("TKP ") {
                 // The metadata and thumbnail are written before the first byte of video.
                 if tracker.claimInfo(), let info = adoptInfo(id) { onInfo(info) }
                 if let fraction = tracker.update(line) { onProgress(fraction) }
+            } else if line.hasPrefix("TKS "), let stream = streamURL(line) {
+                onStream(stream)
             } else if line.hasPrefix("TKF "), let finished = Finished(line) {
                 // The thumbnail can land after the first progress line, so pick it up again here.
                 if let info = adoptInfo(id) { onInfo(info) }
@@ -79,6 +88,12 @@ enum YTDLP {
             throw CocoaError(.fileNoSuchFile)
         }
         return (info, file)
+    }
+
+    /// The HLS master playlist from "TKS <JSON array of the formats' manifest URLs>".
+    private static func streamURL(_ line: String) -> URL? {
+        let urls = try? JSONDecoder().decode([String].self, from: Data(line.dropFirst(4).utf8))
+        return urls?.lazy.filter { $0.contains(".m3u8") }.compactMap(URL.init(string:)).first
     }
 
     /// Copies the metadata and thumbnail from `.incoming` into the video's folder.
