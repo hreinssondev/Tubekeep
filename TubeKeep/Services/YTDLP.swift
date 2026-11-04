@@ -12,7 +12,7 @@ struct VideoInfo: Decodable {
 }
 
 enum YTDLP {
-    private static var executable: URL { Tools.url("yt-dlp") }
+    private static var executable: URL { Tools.ytdlp }
 
     static func watchURL(_ id: String) -> String { "https://www.youtube.com/watch?v=\(id)" }
 
