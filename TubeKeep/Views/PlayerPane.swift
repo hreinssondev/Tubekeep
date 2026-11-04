@@ -37,7 +37,7 @@ private struct PlayerView: NSViewRepresentable {
     let reveal: LibraryReveal
 
     func makeNSView(context: Context) -> AVPlayerView {
-        let view = AVPlayerView()
+        let view = SidewaysSeekingPlayerView()
         reveal.playerView = view
         view.player = player
         view.controlsStyle = .floating
@@ -47,6 +47,14 @@ private struct PlayerView: NSViewRepresentable {
     }
 
     func updateNSView(_ view: AVPlayerView, context: Context) {}
+}
+
+/// Seeks only on sideways scrolling, so scrolling up and down to show the library never moves the video.
+private final class SidewaysSeekingPlayerView: AVPlayerView {
+    override func scrollWheel(with event: NSEvent) {
+        guard abs(event.scrollingDeltaY) <= abs(event.scrollingDeltaX) else { return }
+        super.scrollWheel(with: event)
+    }
 }
 
 private struct WaitingOverlay: View {

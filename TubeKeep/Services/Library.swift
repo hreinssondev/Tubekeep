@@ -35,10 +35,18 @@ final class Library {
     var context: ModelContext { container.mainContext }
 
     /// Average progress of downloads and upgrades, or nil when none are running. Downgrades don't count.
-    var downloadProgress: Double? {
-        let running = jobs.values.filter { $0.kind != .downgrade }
+    /// `gettingHD` is true once every one of them already has a playable copy and is fetching full quality.
+    var downloadStatus: (progress: Double, gettingHD: Bool)? {
+        let running = jobs.filter { $0.value.kind != .downgrade }
         guard !running.isEmpty else { return nil }
-        return running.reduce(0) { $0 + $1.progress } / Double(running.count)
+        let progress = running.values.reduce(0) { $0 + $1.progress } / Double(running.count)
+        return (progress, running.keys.allSatisfy(isGettingHD))
+    }
+
+    /// The video's download is past its preview (or is an upgrade): it plays, and full quality is on the way.
+    func isGettingHD(_ id: String) -> Bool {
+        guard let job = jobs[id], job.kind != .downgrade else { return false }
+        return video(id)?.lowBytes != nil
     }
 
     init() {

@@ -70,6 +70,8 @@ enum YTDLP {
                 if tracker.claimInfo(), let info = adoptInfo(id) { onInfo(info) }
                 if let fraction = tracker.update(line) { onProgress(fraction) }
             } else if line.hasPrefix("TKF "), let finished = Finished(line) {
+                // The thumbnail can land after the first progress line, so pick it up again here.
+                if let info = adoptInfo(id) { onInfo(info) }
                 if tracker.finished(finished) == 1, previewHeight != nil { onPreview(finished) }
             }
         }

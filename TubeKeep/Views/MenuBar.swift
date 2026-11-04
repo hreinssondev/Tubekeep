@@ -2,19 +2,20 @@ import SwiftUI
 import SwiftData
 
 /// The menu bar icon: a progress ring while anything downloads, otherwise a plain symbol.
+/// The ring holds an arrow while the first copy downloads and "HD" while full quality follows.
 struct MenuBarLabel: View {
     let library: Library
 
     var body: some View {
-        if let progress = library.downloadProgress {
+        if let status = library.downloadStatus {
             // Quantized so the image only re-renders every 2%.
-            Image(nsImage: Self.ring((progress * 50).rounded() / 50))
+            Image(nsImage: Self.ring((status.progress * 50).rounded() / 50, hd: status.gettingHD))
         } else {
             Image(systemName: "play.rectangle")
         }
     }
 
-    private static func ring(_ progress: Double) -> NSImage {
+    private static func ring(_ progress: Double, hd: Bool) -> NSImage {
         let image = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { rect in
             let center = NSPoint(x: rect.midX, y: rect.midY)
             let track = NSBezierPath()
@@ -30,6 +31,15 @@ struct MenuBarLabel: View {
             NSColor.black.setStroke()
             arc.stroke()
 
+            if hd {
+                let text = NSAttributedString(string: "HD", attributes: [
+                    .font: NSFont.systemFont(ofSize: 6, weight: .black),
+                    .foregroundColor: NSColor.black,
+                ])
+                let size = text.size()
+                text.draw(at: NSPoint(x: center.x - size.width / 2, y: center.y - size.height / 2))
+                return true
+            }
             let arrow = NSBezierPath()
             arrow.move(to: NSPoint(x: center.x, y: center.y + 3.5))
             arrow.line(to: NSPoint(x: center.x, y: center.y - 3))
@@ -59,7 +69,8 @@ struct MenuBarPanel: View {
             if !downloading.isEmpty {
                 header("Downloading")
                 ForEach(downloading) { video in
-                    PanelVideoRow(video: video, progress: library.jobs[video.videoID]?.progress, cancel: {
+                    PanelVideoRow(video: video, progress: library.jobs[video.videoID]?.progress,
+                                  gettingHD: library.isGettingHD(video.videoID), cancel: {
                         library.cancelDownload(video)
                     }) { play(video) }
                 }
@@ -67,7 +78,7 @@ struct MenuBarPanel: View {
             if !recent.isEmpty {
                 header("Recently Saved")
                 ForEach(recent) { video in
-                    PanelVideoRow(video: video, progress: nil, cancel: nil) { play(video) }
+                    PanelVideoRow(video: video, progress: nil, gettingHD: false, cancel: nil) { play(video) }
                 }
             }
             if downloading.isEmpty && recent.isEmpty {
@@ -107,6 +118,7 @@ struct MenuBarPanel: View {
 private struct PanelVideoRow: View {
     let video: Video
     let progress: Double?
+    let gettingHD: Bool
     let cancel: (() -> Void)?
     let action: () -> Void
 
@@ -134,7 +146,12 @@ private struct PanelVideoRow: View {
                     .clipShape(RoundedRectangle(cornerRadius: 3))
                 VStack(alignment: .leading, spacing: 3) {
                     Text(video.title).lineLimit(1)
-                    if let progress, progress > 0 {
+                    if let progress, gettingHD {
+                        ProgressView(value: progress).controlSize(.small)
+                        Text("\(video.lowHeight ?? Library.previewHeight)p ready · getting HD \(progress.formatted(.percent.precision(.fractionLength(0))))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else if let progress, progress > 0 {
                         ProgressView(value: progress).controlSize(.small)
                     } else if progress != nil {
                         // yt-dlp is still talking to YouTube; no bytes yet.
