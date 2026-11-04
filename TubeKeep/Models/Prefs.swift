@@ -12,7 +12,7 @@ enum Prefs {
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
             downgradeDays: 3,
-            maxHeight: 480,
+            maxHeight: 1080,
             lowHeight: 480,
         ])
     }

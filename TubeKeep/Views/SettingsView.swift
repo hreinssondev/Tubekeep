@@ -6,7 +6,7 @@ import ServiceManagement
 struct SettingsView: View {
     @Environment(Library.self) private var library
     @AppStorage(Prefs.downgradeDays) private var downgradeDays = 3
-    @AppStorage(Prefs.maxHeight) private var maxHeight = 480
+    @AppStorage(Prefs.maxHeight) private var maxHeight = 1080
     @AppStorage(Prefs.lowHeight) private var lowHeight = 480
     @Query private var videos: [Video]
     @State private var openAtLogin = SMAppService.mainApp.status == .enabled

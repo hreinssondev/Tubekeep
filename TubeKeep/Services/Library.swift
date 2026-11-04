@@ -36,7 +36,7 @@ final class Library {
     @ObservationIgnored private var streams: [String: URL] = [:]
 
     /// Height of the quick copy a new download fetches first, so it can play within seconds.
-    static let previewHeight = 360
+    static let previewHeight = 480
 
     var context: ModelContext { container.mainContext }
 
