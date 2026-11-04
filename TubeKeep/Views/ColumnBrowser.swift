@@ -145,7 +145,9 @@ private struct BrowserColumn: View {
                 ForEach(tree.children(of: parent), id: \.self, content: row)
             } else {
                 Section("Library") {
-                    row(.byDate)
+                    // A ForEach gives the row its selection tag, like every other row; an untagged row
+                    // makes clicks select the row after it.
+                    ForEach([Node.byDate], id: \.self, content: row)
                 }
                 Section("Folders") {
                     ForEach(tree.rootFolders, id: \.self, content: row)
