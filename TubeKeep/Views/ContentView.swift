@@ -36,11 +36,14 @@ struct ContentView: View {
             .onChange(of: height, initial: true) { reveal.distance = height }
         }
         .toolbar {
-            ToolbarItem {
+            // With no title or field in the middle, the buttons would sit by the window buttons; the spacer
+            // keeps them at the trailing edge.
+            if #available(macOS 26, *) {
+                ToolbarSpacer(.flexible)
+            }
+            ToolbarItemGroup {
                 Button("New Folder", systemImage: "folder.badge.plus") { library.newFolderRequest += 1 }
                     .help("New Folder (⇧⌘N)")
-            }
-            ToolbarItem {
                 Button(reveal.isShown ? "Hide Library" : "Show Library", systemImage: "rectangle.bottomhalf.inset.filled") {
                     reveal.toggle()
                 }
