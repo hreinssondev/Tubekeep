@@ -37,8 +37,7 @@ private struct PlayerView: NSViewRepresentable {
     let reveal: LibraryReveal
 
     func makeNSView(context: Context) -> AVPlayerView {
-        let view = SidewaysSeekingPlayerView()
-        view.reveal = reveal
+        let view = NonScrollingPlayerView()
         reveal.playerView = view
         view.player = player
         view.controlsStyle = .floating
@@ -50,14 +49,9 @@ private struct PlayerView: NSViewRepresentable {
     func updateNSView(_ view: AVPlayerView, context: Context) {}
 }
 
-/// Seeks only on sideways scrolling, so scrolling up and down to show the library never touches playback.
-private final class SidewaysSeekingPlayerView: AVPlayerView {
-    weak var reveal: LibraryReveal?
-
-    override func scrollWheel(with event: NSEvent) {
-        guard reveal?.allowsSeeking(event) == true else { return }
-        super.scrollWheel(with: event)
-    }
+/// Ignores scrolling, which would pause and seek: it only reveals the library. The arrow keys seek.
+private final class NonScrollingPlayerView: AVPlayerView {
+    override func scrollWheel(with event: NSEvent) {}
 }
 
 private struct WaitingOverlay: View {
