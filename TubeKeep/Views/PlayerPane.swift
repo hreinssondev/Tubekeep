@@ -2,14 +2,14 @@ import SwiftUI
 import AVKit
 
 struct PlayerPane: View {
-    @Environment(Library.self) private var library
-    @Environment(PlayerController.self) private var player
-    @Environment(LibraryReveal.self) private var reveal
+    @EnvironmentObject private var library: Library
+    @EnvironmentObject private var player: PlayerController
+    @EnvironmentObject private var reveal: LibraryReveal
 
     var body: some View {
         let video = player.videoID.flatMap(library.video)
         ZStack(alignment: .topTrailing) {
-            PlayerView(player: player.player, reveal: reveal)
+            PlayerView(controller: player, reveal: reveal)
             if let video {
                 if player.source == .waiting {
                     WaitingOverlay(video: video)
@@ -20,26 +20,47 @@ struct PlayerPane: View {
         }
         .overlay {
             if video == nil {
-                ContentUnavailableView(
-                    "Nothing Playing",
-                    systemImage: "play.rectangle",
-                    description: Text("Drop a YouTube link here or press ⇧⌘V to add one from the clipboard, then double-click a video to play it.")
-                )
-                .environment(\.colorScheme, .dark)
+                NothingPlaying()
+                    .environment(\.colorScheme, .dark)
             }
         }
         .background(.black)
     }
 }
 
+private struct NothingPlaying: View {
+    private let title = "Nothing Playing"
+    private let message = "Drop a YouTube link here or press ⇧⌘V to add one from the clipboard, then double-click a video to play it."
+
+    var body: some View {
+        if #available(macOS 14, *) {
+            ContentUnavailableView(title, systemImage: "play.rectangle", description: Text(message))
+        } else {
+            VStack(spacing: 8) {
+                Image(systemName: "play.rectangle")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 4)
+                Text(title).font(.title2.bold())
+                Text(message)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 420)
+            }
+            .padding()
+        }
+    }
+}
+
 private struct PlayerView: NSViewRepresentable {
-    let player: AVPlayer
+    let controller: PlayerController
     let reveal: LibraryReveal
 
     func makeNSView(context: Context) -> AVPlayerView {
         let view = MainPlayerView()
         reveal.playerView = view
-        view.player = player
+        view.controller = controller
+        view.player = controller.player
         view.controlsStyle = .floating
         view.showsFullScreenToggleButton = true
         view.allowsPictureInPicturePlayback = true
@@ -50,8 +71,10 @@ private struct PlayerView: NSViewRepresentable {
 }
 
 /// Ignores scrolling, which would pause and seek: it only reveals the library. The arrow keys seek.
-/// Space plays and pauses from anywhere in the window, not just when the player has focus.
+/// Space plays and pauses from anywhere in the window, not just when the player has focus, and with
+/// nothing loaded plays the video selected in the library.
 private final class MainPlayerView: AVPlayerView {
+    weak var controller: PlayerController?
     private var keyMonitor: Any?
 
     override func scrollWheel(with event: NSEvent) {}
@@ -75,16 +98,22 @@ private final class MainPlayerView: AVPlayerView {
         guard event.window === window, event.keyCode == 49,
               event.modifierFlags.isDisjoint(with: [.command, .control, .option, .shift]),
               !(window?.firstResponder is NSText),
-              let player, player.currentItem != nil
+              let controller
         else { return event }
-        if player.timeControlStatus == .paused { player.play() } else { player.pause() }
+        if controller.player.currentItem != nil {
+            controller.togglePlayback()
+        } else if let id = controller.browserSelection, let video = controller.library?.video(id) {
+            controller.show(video, autoplay: true)
+        } else {
+            return event
+        }
         return nil
     }
 }
 
 private struct WaitingOverlay: View {
-    @Environment(Library.self) private var library
-    let video: Video
+    @EnvironmentObject private var library: Library
+    @ObservedObject var video: Video
 
     var body: some View {
         VStack(spacing: 10) {
@@ -109,9 +138,9 @@ private struct WaitingOverlay: View {
 
 /// Which copy is playing, and the upgrade's progress while a better one downloads.
 private struct QualityBadge: View {
-    @Environment(Library.self) private var library
-    @Environment(PlayerController.self) private var player
-    let video: Video
+    @EnvironmentObject private var library: Library
+    @EnvironmentObject private var player: PlayerController
+    @ObservedObject var video: Video
 
     var body: some View {
         let job = library.jobs[video.videoID]
@@ -154,8 +183,8 @@ private struct QualityBadge: View {
 }
 
 struct VideoInfoPanel: View {
-    @Environment(Library.self) private var library
-    let video: Video
+    @EnvironmentObject private var library: Library
+    @ObservedObject var video: Video
 
     var body: some View {
         HStack(alignment: .top, spacing: 16) {

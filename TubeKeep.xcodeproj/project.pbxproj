@@ -11,6 +11,7 @@
 		1C669AB5E8CCB7FAE1180293 /* Browser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60616AAC7F74152AF2D376BD /* Browser.swift */; };
 		2A37D286791CB7730AAB3109 /* Media.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9504A029107DE2756BA25AD0 /* Media.swift */; };
 		2AC7BD5BA66F7BE2EDCF55B8 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B86353C6E3A27C64483DFCB8 /* SettingsView.swift */; };
+		36D65281F1B5046809D94E4F /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA892B888A8B6A76837FEAAE /* Store.swift */; };
 		385B5992D44B117E0DB0A45E /* NowPlaying.swift in Sources */ = {isa = PBXBuildFile; fileRef = 669BAB1CCC0F543183204D89 /* NowPlaying.swift */; };
 		3D020E153D2076DAC867F5A7 /* PlayingVideo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228208338343C0161EEF0E8F /* PlayingVideo.swift */; };
 		3DF23D1A3DD72AC058C533F7 /* YTDLP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61B3932D56291AAA381C2F02 /* YTDLP.swift */; };
@@ -78,6 +79,7 @@
 		AD365B721C176628B38F2EBF /* PlayerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerController.swift; sourceTree = "<group>"; };
 		AE01FB6717CFF52D96D25DFA /* Tree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tree.swift; sourceTree = "<group>"; };
 		B86353C6E3A27C64483DFCB8 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		DA892B888A8B6A76837FEAAE /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		DDC9EE0492CEB4ACFBAAFF39 /* MediaRemoteAdapter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaRemoteAdapter.framework; path = Vendor/MediaRemoteAdapter.framework; sourceTree = "<group>"; };
 		E636EA77D63AE51ECBCE32D5 /* TubeKeepApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TubeKeepApp.swift; sourceTree = "<group>"; };
 		EBCC47AE59CA0B369DAFEAD1 /* Library.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Library.swift; sourceTree = "<group>"; };
@@ -109,6 +111,7 @@
 			children = (
 				2CB7FC96B8A4B21FCD0F60BF /* Folder.swift */,
 				7C5712660E39D7A201ACB858 /* Prefs.swift */,
+				DA892B888A8B6A76837FEAAE /* Store.swift */,
 				77BB516341D58D4B9ECBBBCC /* Video.swift */,
 			);
 			path = Models;
@@ -284,6 +287,7 @@
 				9A710EB14A09D7BE692F8B2E /* Prefs.swift in Sources */,
 				DB8C5D089FF99EC1CE8DFE9E /* ProcessRunner.swift in Sources */,
 				2AC7BD5BA66F7BE2EDCF55B8 /* SettingsView.swift in Sources */,
+				36D65281F1B5046809D94E4F /* Store.swift in Sources */,
 				D13D36108FAB352ED3363EC5 /* Tools.swift in Sources */,
 				D8367789CD6514070258F472 /* Tree.swift in Sources */,
 				7150F7094F9F9BE8D1F550D6 /* TubeKeepApp.swift in Sources */,
@@ -366,7 +370,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -429,7 +433,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct ContentView: View {
-    @Environment(Library.self) private var library
-    @Environment(PlayerController.self) private var player
-    @Environment(LibraryReveal.self) private var reveal
+    @EnvironmentObject private var library: Library
+    @EnvironmentObject private var player: PlayerController
+    @EnvironmentObject private var reveal: LibraryReveal
     @State private var path: [Node] = [.byDate]
     @State private var renaming: Folder?
     @State private var newName = ""
@@ -34,7 +34,8 @@ struct ContentView: View {
             .frame(height: geometry.size.height, alignment: .top)
             .offset(y: -reveal.progress * height)
             .clipped()
-            .onChange(of: height, initial: true) { reveal.distance = height }
+            .onChange(of: height) { reveal.distance = $0 }
+            .onAppear { reveal.distance = height }
         }
         .toolbar {
             // With no title or field in the middle, the buttons would sit by the window buttons; the spacer
@@ -61,13 +62,9 @@ struct ContentView: View {
             add(text)
             return true
         }
-        .onChange(of: library.selectionRequest, initial: true) { _, id in
-            guard let id else { return }
-            library.selectionRequest = nil
-            if let video = library.video(id) { select(video) }
-            reveal.hide()
-        }
-        .onChange(of: renaming) { _, folder in newName = folder?.name ?? "" }
+        .onChange(of: library.selectionRequest) { _ in takeSelectionRequest() }
+        .onAppear(perform: takeSelectionRequest)
+        .onChange(of: renaming) { folder in newName = folder?.name ?? "" }
         .alert("Rename Folder", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
             TextField("Name", text: $newName)
             Button("Rename") {
@@ -92,6 +89,14 @@ struct ContentView: View {
         guard links.count == 1, case .video(let id) = links[0], let video = library.video(id), !player.isPlaying else { return }
         select(video)
         player.show(video, autoplay: true)
+    }
+
+    /// Selects the video `Library.open(_:)` asked for, with the video at full size.
+    private func takeSelectionRequest() {
+        guard let id = library.selectionRequest else { return }
+        library.selectionRequest = nil
+        if let video = library.video(id) { select(video) }
+        reveal.hide()
     }
 
     private func select(_ video: Video) {
@@ -126,10 +131,11 @@ struct ContentView: View {
 
 /// Tool setup progress and messages.
 private struct StatusBar: View {
-    @Environment(Library.self) private var library
+    @EnvironmentObject private var library: Library
+    @EnvironmentObject private var tools: Tools
 
     var body: some View {
-        let status = library.tools.status
+        let status = tools.status
         if case .installing(let name, let progress) = status {
             bar {
                 ProgressView(value: progress).frame(width: 120)
@@ -139,7 +145,7 @@ private struct StatusBar: View {
             bar {
                 Label(message, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                 Spacer()
-                Button("Retry") { Task { await library.tools.prepare() } }
+                Button("Retry") { Task { await tools.prepare() } }
             }
         } else if let message = library.message {
             bar {

@@ -1,21 +1,23 @@
 import AVFoundation
-import Observation
+import Combine
 
-@MainActor @Observable
-final class PlayerController {
+@MainActor
+final class PlayerController: ObservableObject {
     enum Source { case high, low, stream, waiting }
 
     let player = AVPlayer()
-    private(set) var videoID: String?
-    private(set) var source: Source?
-    private(set) var isPlaying = false
+    @Published private(set) var videoID: String?
+    @Published private(set) var source: Source?
+    @Published private(set) var isPlaying = false
     weak var library: Library?
+    /// The video selected in the library, which space plays when nothing is loaded.
+    var browserSelection: String?
 
-    @ObservationIgnored private var autoplayWhenReady = false
-    @ObservationIgnored private var timeObserver: Any?
-    @ObservationIgnored private var statusObservation: NSKeyValueObservation?
-    @ObservationIgnored private var streamObservation: NSKeyValueObservation?
-    @ObservationIgnored private var endObserver: NSObjectProtocol?
+    private var autoplayWhenReady = false
+    private var timeObserver: Any?
+    private var statusObservation: NSKeyValueObservation?
+    private var streamObservation: NSKeyValueObservation?
+    private var endObserver: NSObjectProtocol?
 
     init() {
         timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 5, preferredTimescale: 1), queue: .main) { [weak self] _ in

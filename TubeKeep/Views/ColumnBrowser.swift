@@ -1,12 +1,11 @@
 import SwiftUI
-import SwiftData
 
 /// Finder-style columns: each column lists the children of the selection in the column before it.
 struct ColumnBrowser: View {
-    @Environment(Library.self) private var library
-    @Environment(PlayerController.self) private var player
-    @Query(sort: \Video.savedAt, order: .reverse) private var videos: [Video]
-    @Query private var folders: [Folder]
+    @EnvironmentObject private var library: Library
+    @EnvironmentObject private var player: PlayerController
+    @FetchRequest(fetchRequest: Store.videosNewestFirst) private var videos: FetchedResults<Video>
+    @FetchRequest(fetchRequest: Store.allFolders) private var folders: FetchedResults<Folder>
     @Binding var path: [Node]
     @Binding var renaming: Folder?
     @Binding var confirmingDelete: Node?
@@ -14,7 +13,7 @@ struct ColumnBrowser: View {
     @State private var widths: [Int: CGFloat] = [:]
 
     var body: some View {
-        let tree = Tree(videos: videos, folders: folders)
+        let tree = Tree(videos: Array(videos), folders: Array(folders))
         let parents = columnParents
         HStack(spacing: 0) {
             ScrollViewReader { proxy in
@@ -40,25 +39,33 @@ struct ColumnBrowser: View {
                     }
                 }
                 .scrollIndicators(.automatic)
-                .onChange(of: parents.count) {
+                .onChange(of: parents.count) { _ in
                     withAnimation(.easeOut(duration: 0.15)) { proxy.scrollTo("end", anchor: .trailing) }
                 }
             }
             Divider()
             QualityColumn()
         }
-        .onChange(of: videos.count + folders.count, initial: true) {
-            let valid = tree.validPrefix(of: path)
-            if valid != path { path = valid }
-        }
-        .onChange(of: library.newFolderRequest) { newFolder() }
-        .onChange(of: path) { _, path in
+        .onChange(of: videos.count + folders.count) { _ in dropMissing(from: tree) }
+        .onChange(of: library.newFolderRequest) { _ in newFolder() }
+        .onChange(of: path) { path in
+            let selected: String? = if case .video(let id)? = path.last { id } else { nil }
+            player.browserSelection = selected
             // Selecting a video shows it in the player, unless something else is playing.
-            if case .video(let id)? = path.last, !player.isPlaying, let video = tree.videos[id] {
+            if let selected, !player.isPlaying, let video = tree.videos[selected] {
                 player.show(video, autoplay: false)
             }
         }
-        .onAppear { focus = path.count - (path.last?.isLeaf == true ? 1 : 0) - 1 }
+        .onAppear {
+            dropMissing(from: tree)
+            focus = path.count - (path.last?.isLeaf == true ? 1 : 0) - 1
+        }
+    }
+
+    /// Cuts the path back to what still exists, after videos or folders are deleted.
+    private func dropMissing(from tree: Tree) {
+        let valid = tree.validPrefix(of: path)
+        if valid != path { path = valid }
     }
 
     /// Column 0 lists the root; each selected container in the path opens the next column.
@@ -133,8 +140,8 @@ struct ColumnBrowser: View {
 }
 
 private struct BrowserColumn: View {
-    @Environment(Library.self) private var library
-    @Environment(PlayerController.self) private var player
+    @EnvironmentObject private var library: Library
+    @EnvironmentObject private var player: PlayerController
     let index: Int
     let parent: Node?
     let tree: Tree
@@ -161,7 +168,7 @@ private struct BrowserColumn: View {
                     .foregroundStyle(.tertiary)
                     .font(.callout)
                     .frame(maxWidth: .infinity, minHeight: max(height - 24, 44))
-                    .selectionDisabled()
+                    .selectionDisabledIfAvailable()
                     .dropDestination(for: String.self) { items, _ in library.handleDrop(items, into: containerFolder) }
             } else if let parent, let containerFolder {
                 ForEach(tree.children(of: parent), id: \.self, content: row)
@@ -197,20 +204,12 @@ private struct BrowserColumn: View {
         } primaryAction: { nodes in
             if let node = nodes.first { open(node) }
         }
-        .onKeyPress(.rightArrow) {
-            guard let selection, !selection.isLeaf else { return .ignored }
+        // Space is the player's: it plays the selected video when nothing is loaded.
+        .modifier(ColumnArrowKeys(right: {
+            guard let selection, !selection.isLeaf else { return false }
             open(selection)
-            return .handled
-        }
-        .onKeyPress(.leftArrow) {
-            back()
-            return .handled
-        }
-        .onKeyPress(.space) {
-            guard case .video(let id)? = selection, let video = tree.videos[id] else { return .ignored }
-            if player.isShowing(id) { player.togglePlayback() } else { player.show(video, autoplay: true) }
-            return .handled
-        }
+            return true
+        }, left: back))
         .onDeleteCommand {
             if let selection { confirmingDelete = selection }
         }
@@ -268,9 +267,44 @@ private struct BrowserColumn: View {
     }
 }
 
+/// → steps into the selected container and ← back out, like in Finder. Before macOS 14 there's no
+/// onKeyPress; move commands reach the list for left and right, which it doesn't use itself.
+private struct ColumnArrowKeys: ViewModifier {
+    /// Returns whether it stepped in.
+    let right: () -> Bool
+    let left: () -> Void
+
+    func body(content: Content) -> some View {
+        if #available(macOS 14, *) {
+            content
+                .onKeyPress(.rightArrow) { right() ? .handled : .ignored }
+                .onKeyPress(.leftArrow) {
+                    left()
+                    return .handled
+                }
+        } else {
+            content.onMoveCommand { direction in
+                switch direction {
+                case .right: _ = right()
+                case .left: left()
+                default: break
+                }
+            }
+        }
+    }
+}
+
+private extension View {
+    /// The "Drag videos here" hint row can't be selected where that's possible (macOS 14).
+    @ViewBuilder
+    func selectionDisabledIfAvailable() -> some View {
+        if #available(macOS 14, *) { selectionDisabled() } else { self }
+    }
+}
+
 /// Drops onto a folder row go into the folder, which lights up while something is dragged over it.
 private struct FolderDropTarget: ViewModifier {
-    @Environment(Library.self) private var library
+    @EnvironmentObject private var library: Library
     let folder: Folder
     @State private var isTargeted = false
 
@@ -292,7 +326,7 @@ private struct FolderDropTarget: ViewModifier {
 
 /// In a folder's column, a drop onto a video row goes into the folder, like a drop between rows.
 private struct DropInto: ViewModifier {
-    @Environment(Library.self) private var library
+    @EnvironmentObject private var library: Library
     let folder: Folder?
 
     func body(content: Content) -> some View {
@@ -305,9 +339,9 @@ private struct DropInto: ViewModifier {
 }
 
 private struct VideoMenu: View {
-    @Environment(Library.self) private var library
-    @Environment(PlayerController.self) private var player
-    let video: Video
+    @EnvironmentObject private var library: Library
+    @EnvironmentObject private var player: PlayerController
+    @ObservedObject var video: Video
     let folders: [Folder]
     let containerFolder: Folder?
     let delete: () -> Void
@@ -385,11 +419,19 @@ private struct ContainerRow: View {
 /// The shown video's quality, at the browser's right edge. Picking another downloads it in that quality
 /// and replaces the current copy once it's in.
 private struct QualityColumn: View {
-    @Environment(Library.self) private var library
-    @Environment(PlayerController.self) private var player
+    @EnvironmentObject private var library: Library
+    @EnvironmentObject private var player: PlayerController
 
     var body: some View {
-        let video = player.videoID.flatMap(library.video)
+        if let video = player.videoID.flatMap(library.video) {
+            Observing(video) { buttons(for: $0) }
+        } else {
+            buttons(for: nil)
+        }
+    }
+
+    @ViewBuilder
+    private func buttons(for video: Video?) -> some View {
         let job = video.flatMap { library.jobs[$0.videoID] }
         let current = video.flatMap { $0.highBytes != nil ? $0.highHeight : $0.lowHeight }
         VStack(spacing: 4) {

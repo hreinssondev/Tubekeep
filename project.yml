@@ -2,7 +2,7 @@ name: TubeKeep
 options:
   bundleIdPrefix: com.hreinsson
   deploymentTarget:
-    macOS: "14.0"
+    macOS: "13.0"
   createIntermediateGroups: true
 settings:
   base:

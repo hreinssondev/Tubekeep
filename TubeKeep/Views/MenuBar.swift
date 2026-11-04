@@ -1,10 +1,9 @@
 import SwiftUI
-import SwiftData
 
 /// The menu bar icon: a progress ring while anything downloads, otherwise a plain symbol.
 /// The ring holds an arrow while the first copy downloads and "HD" while full quality follows.
 struct MenuBarLabel: View {
-    let library: Library
+    @ObservedObject var library: Library
 
     var body: some View {
         if let status = library.downloadStatus {
@@ -58,9 +57,9 @@ struct MenuBarLabel: View {
 }
 
 struct MenuBarPanel: View {
-    @Environment(Library.self) private var library
+    @EnvironmentObject private var library: Library
     @Environment(\.openWindow) private var openWindow
-    @Query(sort: \Video.savedAt, order: .reverse) private var videos: [Video]
+    @FetchRequest(fetchRequest: Store.videosNewestFirst) private var videos: FetchedResults<Video>
 
     var body: some View {
         let downloading = videos.filter { library.jobs[$0.videoID].map { $0.kind != .downgrade } ?? false }
@@ -111,12 +110,12 @@ struct MenuBarPanel: View {
     private func openMainWindow() {
         NSApp.keyWindow?.close()
         openWindow(id: "main")
-        NSApp.activate()
+        if #available(macOS 14, *) { NSApp.activate() } else { NSApp.activate(ignoringOtherApps: true) }
     }
 }
 
 private struct PanelVideoRow: View {
-    let video: Video
+    @ObservedObject var video: Video
     let progress: Double?
     let gettingHD: Bool
     let cancel: (() -> Void)?

@@ -4,21 +4,21 @@ import SwiftUI
 /// How far the page has scrolled down from the video to the library: 0 shows only the video, 1 the whole library.
 /// Only vertical scrolling over the video or its title bar moves it, so the browser's lists keep their own scrolling.
 /// Scrolling over the video never reaches the player, which would pause and seek; the arrow keys seek.
-@MainActor @Observable
-final class LibraryReveal {
-    var progress: CGFloat = 1
+@MainActor
+final class LibraryReveal: ObservableObject {
+    @Published var progress: CGFloat = 1
     /// Points of scrolling between hidden and shown; the height the library takes up.
-    @ObservationIgnored var distance: CGFloat = 500
-    @ObservationIgnored weak var playerView: NSView?
+    var distance: CGFloat = 500
+    weak var playerView: NSView?
     /// The title bar under the video, which scrolls the page too.
-    @ObservationIgnored weak var infoView: NSView?
-    @ObservationIgnored private var monitor: Any?
+    weak var infoView: NSView?
+    private var monitor: Any?
     /// The current trackpad gesture started over the video, so its momentum is ours too.
-    @ObservationIgnored private var tracking = false
+    private var tracking = false
     /// The current gesture's axis, fixed by its first movement: true is vertical, nil not yet known.
-    @ObservationIgnored private var vertical: Bool?
-    @ObservationIgnored private var velocity: CGFloat = 0
-    @ObservationIgnored private var wheelSnap: Task<Void, Never>?
+    private var vertical: Bool?
+    private var velocity: CGFloat = 0
+    private var wheelSnap: Task<Void, Never>?
 
     init() {
         monitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
@@ -29,11 +29,11 @@ final class LibraryReveal {
     var isShown: Bool { progress > 0.5 }
 
     func toggle() {
-        withAnimation(.snappy(duration: 0.3)) { progress = isShown ? 0 : 1 }
+        withAnimation(.reveal) { progress = isShown ? 0 : 1 }
     }
 
     func hide() {
-        withAnimation(.snappy(duration: 0.3)) { progress = 0 }
+        withAnimation(.reveal) { progress = 0 }
     }
 
     private func handle(_ event: NSEvent) -> NSEvent? {
@@ -79,7 +79,7 @@ final class LibraryReveal {
     private func snap() {
         let target: CGFloat = if velocity < -0.5 { 1 } else if velocity > 0.5 { 0 } else { progress > 0.5 ? 1 : 0 }
         velocity = 0
-        withAnimation(.snappy(duration: 0.3)) { progress = target }
+        withAnimation(.reveal) { progress = target }
     }
 
     private func isSideways(_ event: NSEvent) -> Bool {
@@ -107,4 +107,11 @@ struct PageScrollArea: NSViewRepresentable {
     }
 
     func updateNSView(_ view: NSView, context: Context) {}
+}
+
+extension Animation {
+    /// Opening and closing the library: `.snappy` where there is one (macOS 14).
+    static var reveal: Animation {
+        if #available(macOS 14, *) { .snappy(duration: 0.3) } else { .spring(response: 0.3, dampingFraction: 0.85) }
+    }
 }

@@ -1,11 +1,10 @@
 import AppKit
+import CoreData
 import KeyboardShortcuts
-import SwiftData
-import Observation
 
 /// Owns the store and every download, upgrade and downgrade job.
-@MainActor @Observable
-final class Library {
+@MainActor
+final class Library: ObservableObject {
     struct Job {
         enum Kind { case download, upgrade, downgrade }
         let kind: Kind
@@ -15,30 +14,31 @@ final class Library {
         var task: Task<Void, Never>?
     }
 
-    let container: ModelContainer
+    let container: NSPersistentContainer
     let tools = Tools()
     let player = PlayerController()
-    private(set) var jobs: [String: Job] = [:]
+    @Published private(set) var jobs: [String: Job] = [:]
     /// Shown as a banner; cleared by the user.
-    var message: String?
+    @Published var message: String?
     /// Bumped by the New Folder command; the browser creates the folder where the selection is.
-    var newFolderRequest = 0
+    @Published var newFolderRequest = 0
     /// A video for the browser to select, set by `open(_:)`; the browser clears it.
-    var selectionRequest: String?
+    @Published var selectionRequest: String?
 
-    @ObservationIgnored private let downloadGate = Gate(2)
-    @ObservationIgnored private let upgradeGate = Gate(2)
-    @ObservationIgnored private let transcodeGate = Gate(1)
-    @ObservationIgnored private var retentionTimer: Timer?
+    private let downloadGate = Gate(2)
+    private let upgradeGate = Gate(2)
+    private let transcodeGate = Gate(1)
+    private var retentionTimer: Timer?
     /// Moving a preview into place; finishing the download waits for it.
-    @ObservationIgnored private var previewTasks: [String: Task<Void, Never>] = [:]
+    private var previewTasks: [String: Task<Void, Never>] = [:]
     /// YouTube's stream of each first download, played until a downloaded copy is in.
-    @ObservationIgnored private var streams: [String: URL] = [:]
+    private var streams: [String: URL] = [:]
+    private var autosave: Task<Void, Never>?
 
     /// Height of the quick copy a new download fetches first, so it can play within seconds.
     static let previewHeight = 480
 
-    var context: ModelContext { container.mainContext }
+    var context: NSManagedObjectContext { container.viewContext }
 
     /// Average progress of downloads and upgrades, or nil when none are running. Downgrades don't count.
     /// `gettingHD` is true once every one of them already has a playable copy and is fetching full quality.
@@ -58,14 +58,18 @@ final class Library {
     init() {
         Paths.ensure(Paths.media)
         do {
-            container = try ModelContainer(
-                for: Video.self, Folder.self,
-                configurations: ModelConfiguration(url: Paths.store)
-            )
+            container = try Store.open(Paths.store)
         } catch {
             fatalError("Couldn't open the library: \(error)")
         }
         player.library = self
+        // Like SwiftData's autosave: changes made without an explicit save (play position, titles…) are
+        // written a moment later.
+        NotificationCenter.default.addObserver(
+            forName: .NSManagedObjectContextObjectsDidChange, object: container.viewContext, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.scheduleSave() }
+        }
         KeyboardShortcuts.onKeyDown(for: .savePlayingVideo) { [weak self] in
             Task { await self?.savePlayingVideo(openingApp: UserDefaults.standard.bool(forKey: Prefs.shortcutOpensApp)) }
         }
@@ -92,23 +96,38 @@ final class Library {
     // MARK: Lookup
 
     func video(_ id: String) -> Video? {
-        var descriptor = FetchDescriptor<Video>(predicate: #Predicate { $0.videoID == id })
-        descriptor.fetchLimit = 1
-        return try? context.fetch(descriptor).first
+        let request = NSFetchRequest<Video>(entityName: "Video")
+        request.predicate = NSPredicate(format: "videoID == %@", id)
+        request.fetchLimit = 1
+        return try? context.fetch(request).first
     }
 
     func folder(_ uid: UUID) -> Folder? {
-        var descriptor = FetchDescriptor<Folder>(predicate: #Predicate { $0.uid == uid })
-        descriptor.fetchLimit = 1
-        return try? context.fetch(descriptor).first
+        let request = NSFetchRequest<Folder>(entityName: "Folder")
+        request.predicate = NSPredicate(format: "uid == %@", uid as NSUUID)
+        request.fetchLimit = 1
+        return try? context.fetch(request).first
     }
 
     private var allVideos: [Video] {
-        (try? context.fetch(FetchDescriptor<Video>())) ?? []
+        (try? context.fetch(NSFetchRequest<Video>(entityName: "Video"))) ?? []
     }
 
-    private func save() {
+    func save() {
+        autosave?.cancel()
+        autosave = nil
+        guard context.hasChanges else { return }
         try? context.save()
+    }
+
+    private func scheduleSave() {
+        guard autosave == nil, context.hasChanges else { return }
+        autosave = Task {
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            autosave = nil
+            try? context.save()
+        }
     }
 
     // MARK: Adding
@@ -168,14 +187,13 @@ final class Library {
     func addVideo(id: String, title: String? = nil, channel: String = "", duration: Double = 0, to folder: Folder?) -> Bool {
         if let existing = video(id) {
             if let folder, !existing.folders.contains(where: { $0.uid == folder.uid }) {
-                folder.videos.append(existing)
+                folder.videos.insert(existing)
                 save()
             }
             return false
         }
-        let video = Video(videoID: id, title: title, channel: channel, duration: duration)
-        context.insert(video)
-        folder?.videos.append(video)
+        let video = Video(videoID: id, title: title, channel: channel, duration: duration, in: context)
+        folder?.videos.insert(video)
         save()
         download(video)
         return true
@@ -434,15 +452,16 @@ final class Library {
 
     @discardableResult
     func newFolder(in parent: Folder?) -> Folder {
-        let siblings = parent?.children ?? ((try? context.fetch(FetchDescriptor<Folder>(predicate: #Predicate { $0.parent == nil }))) ?? [])
+        let request = NSFetchRequest<Folder>(entityName: "Folder")
+        request.predicate = NSPredicate(format: "parent == nil")
+        let siblings = parent.map { Array($0.children) } ?? ((try? context.fetch(request)) ?? [])
         var name = "New Folder"
         var n = 2
         while siblings.contains(where: { $0.name == name }) {
             name = "New Folder \(n)"
             n += 1
         }
-        let folder = Folder(name: name, parent: parent)
-        context.insert(folder)
+        let folder = Folder(name: name, parent: parent, in: context)
         save()
         return folder
     }
@@ -459,12 +478,12 @@ final class Library {
 
     func add(_ video: Video, to folder: Folder) {
         guard !folder.videos.contains(where: { $0.videoID == video.videoID }) else { return }
-        folder.videos.append(video)
+        folder.videos.insert(video)
         save()
     }
 
     func remove(_ video: Video, from folder: Folder) {
-        folder.videos.removeAll { $0.videoID == video.videoID }
+        folder.videos.remove(video)
         save()
     }
 

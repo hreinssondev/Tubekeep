@@ -2,7 +2,7 @@ import SwiftUI
 import ImageIO
 
 struct VideoRow: View {
-    let video: Video
+    @ObservedObject var video: Video
     let isPlaying: Bool
 
     var body: some View {
@@ -40,8 +40,8 @@ struct VideoRow: View {
 
 /// Download progress, or the quality kept on disk.
 struct StatusBadge: View {
-    @Environment(Library.self) private var library
-    let video: Video
+    @EnvironmentObject private var library: Library
+    @ObservedObject var video: Video
 
     var body: some View {
         HStack(spacing: 4) {
@@ -119,4 +119,17 @@ struct Thumbnail: View {
             }
         }
     }
+}
+
+/// Re-renders its content whenever the video changes, for views that find the video themselves.
+struct Observing<Content: View>: View {
+    @ObservedObject var video: Video
+    @ViewBuilder let content: (Video) -> Content
+
+    init(_ video: Video, @ViewBuilder content: @escaping (Video) -> Content) {
+        self.video = video
+        self.content = content
+    }
+
+    var body: some View { content(video) }
 }

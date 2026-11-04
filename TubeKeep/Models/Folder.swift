@@ -1,17 +1,18 @@
-import Foundation
-import SwiftData
+import CoreData
 
-@Model
-final class Folder {
-    @Attribute(.unique) var uid: UUID
-    var name: String
-    var createdAt: Date
-    var parent: Folder?
-    @Relationship(deleteRule: .cascade, inverse: \Folder.parent) var children: [Folder] = []
+@objc(Folder)
+final class Folder: NSManagedObject, Identifiable {
+    @NSManaged var uid: UUID
+    @NSManaged var name: String
+    @NSManaged var createdAt: Date
+    @NSManaged var parent: Folder?
+    /// Deleted along with the folder.
+    @NSManaged var children: Set<Folder>
     /// Folders only reference videos, so a video can sit in several folders and moving it never touches files.
-    @Relationship(inverse: \Video.folders) var videos: [Video] = []
+    @NSManaged var videos: Set<Video>
 
-    init(name: String, parent: Folder? = nil) {
+    convenience init(name: String, parent: Folder? = nil, in context: NSManagedObjectContext) {
+        self.init(entity: Store.folder, insertInto: context)
         self.uid = UUID()
         self.name = name
         self.createdAt = .now

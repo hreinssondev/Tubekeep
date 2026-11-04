@@ -37,7 +37,7 @@ struct Tree {
         videosByDay = byDay
     }
 
-    private static func sorted(_ folders: [Folder]) -> [Folder] {
+    private static func sorted(_ folders: some Sequence<Folder>) -> [Folder] {
         folders.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 

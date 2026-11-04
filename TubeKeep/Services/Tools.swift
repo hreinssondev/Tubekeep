@@ -1,9 +1,8 @@
 import Foundation
-import Observation
 
 /// Downloads yt-dlp, deno, ffmpeg and ffprobe into Application Support on first launch and keeps yt-dlp current.
-@MainActor @Observable
-final class Tools {
+@MainActor
+final class Tools: ObservableObject {
     enum Status: Equatable {
         case checking
         case installing(name: String, progress: Double)
@@ -16,15 +15,22 @@ final class Tools {
         let url: URL
     }
 
+    /// Builds for this Mac's processor; yt-dlp's is universal. All of them run on macOS 12 and later.
+    #if arch(arm64)
+    private static let (denoArch, ffmpegArch) = ("aarch64", "arm64")
+    #else
+    private static let (denoArch, ffmpegArch) = ("x86_64", "amd64")
+    #endif
+
     private static let specs = [
-        Spec(name: "deno", url: URL(string: "https://github.com/denoland/deno/releases/latest/download/deno-aarch64-apple-darwin.zip")!),
-        Spec(name: "ffmpeg", url: URL(string: "https://ffmpeg.martin-riedl.de/redirect/latest/macos/arm64/release/ffmpeg.zip")!),
-        Spec(name: "ffprobe", url: URL(string: "https://ffmpeg.martin-riedl.de/redirect/latest/macos/arm64/release/ffprobe.zip")!),
+        Spec(name: "deno", url: URL(string: "https://github.com/denoland/deno/releases/latest/download/deno-\(denoArch)-apple-darwin.zip")!),
+        Spec(name: "ffmpeg", url: URL(string: "https://ffmpeg.martin-riedl.de/redirect/latest/macos/\(ffmpegArch)/release/ffmpeg.zip")!),
+        Spec(name: "ffprobe", url: URL(string: "https://ffmpeg.martin-riedl.de/redirect/latest/macos/\(ffmpegArch)/release/ffprobe.zip")!),
     ]
 
-    private(set) var status = Status.checking
-    private(set) var ytdlpVersion: String?
-    private(set) var isUpdating = false
+    @Published private(set) var status = Status.checking
+    @Published private(set) var ytdlpVersion: String?
+    @Published private(set) var isUpdating = false
 
     var isReady: Bool { status == .ready }
 

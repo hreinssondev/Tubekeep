@@ -1,14 +1,13 @@
 import SwiftUI
-import SwiftData
 import KeyboardShortcuts
 import ServiceManagement
 
 struct SettingsView: View {
-    @Environment(Library.self) private var library
+    @EnvironmentObject private var tools: Tools
     @AppStorage(Prefs.downgradeDays) private var downgradeDays = 3
     @AppStorage(Prefs.maxHeight) private var maxHeight = 1080
     @AppStorage(Prefs.lowHeight) private var lowHeight = 480
-    @Query private var videos: [Video]
+    @FetchRequest(fetchRequest: Store.videosNewestFirst) private var videos: FetchedResults<Video>
     @State private var openAtLogin = SMAppService.mainApp.status == .enabled
     @AppStorage(Prefs.showMenuBarIcon) private var showMenuBarIcon = true
     @AppStorage(Prefs.shortcutOpensApp) private var shortcutOpensApp = true
@@ -39,7 +38,7 @@ struct SettingsView: View {
                 Toggle("Shortcut opens TubeKeep", isOn: $shortcutOpensApp)
                 Toggle("Show in menu bar", isOn: $showMenuBarIcon)
                 Toggle("Open at login", isOn: $openAtLogin)
-                    .onChange(of: openAtLogin) { _, on in
+                    .onChange(of: openAtLogin) { on in
                         try? on ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister()
                         openAtLogin = SMAppService.mainApp.status == .enabled
                     }
@@ -56,11 +55,11 @@ struct SettingsView: View {
                 Button("Show in Finder") { NSWorkspace.shared.open(Paths.media) }
             }
             Section("Downloader") {
-                LabeledContent("yt-dlp", value: library.tools.ytdlpVersion ?? "–")
-                Button(library.tools.isUpdating ? "Updating…" : "Update Now") {
-                    Task { await library.tools.updateYTDLP() }
+                LabeledContent("yt-dlp", value: tools.ytdlpVersion ?? "–")
+                Button(tools.isUpdating ? "Updating…" : "Update Now") {
+                    Task { await tools.updateYTDLP() }
                 }
-                .disabled(library.tools.isUpdating || !library.tools.isReady)
+                .disabled(tools.isUpdating || !tools.isReady)
             }
         }
         .formStyle(.grouped)

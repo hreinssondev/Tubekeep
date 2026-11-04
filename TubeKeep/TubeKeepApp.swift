@@ -1,9 +1,10 @@
 import SwiftUI
-import SwiftData
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let library: Library
+    /// Kept here rather than as the app's state, so scrolling the page doesn't re-evaluate every scene.
+    let reveal = LibraryReveal()
 
     override init() {
         Self.replaceOtherInstances()
@@ -27,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         library.stopAllJobs()
+        library.save()
     }
 
     /// tubekeep:// links. Handled here rather than with onOpenURL, which isn't delivered reliably
@@ -40,7 +42,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 struct TubeKeepApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
     private var library: Library { appDelegate.library }
-    @State private var reveal = LibraryReveal()
+    private var reveal: LibraryReveal { appDelegate.reveal }
     @AppStorage(Prefs.showMenuBarIcon) private var showMenuBarIcon = true
 
     init() {
@@ -50,10 +52,11 @@ struct TubeKeepApp: App {
     var body: some Scene {
         Window("TubeKeep", id: "main") {
             ContentView()
-                .environment(library)
-                .environment(library.player)
-                .environment(reveal)
-                .modelContainer(library.container)
+                .environmentObject(library)
+                .environmentObject(library.player)
+                .environmentObject(library.tools)
+                .environmentObject(reveal)
+                .environment(\.managedObjectContext, library.context)
         }
         .defaultSize(width: 1500, height: 860)
         .windowToolbarStyle(.unified(showsTitle: false))
@@ -66,16 +69,15 @@ struct TubeKeepApp: App {
                     .keyboardShortcut("n", modifiers: [.command, .shift])
             }
             CommandGroup(before: .toolbar) {
-                Button(reveal.isShown ? "Hide Library" : "Show Library") { reveal.toggle() }
-                    .keyboardShortcut("l")
+                LibraryToggleCommand(reveal: reveal)
                 Divider()
             }
         }
 
         MenuBarExtra(isInserted: $showMenuBarIcon) {
             MenuBarPanel()
-                .environment(library)
-                .modelContainer(library.container)
+                .environmentObject(library)
+                .environment(\.managedObjectContext, library.context)
         } label: {
             MenuBarLabel(library: library)
         }
@@ -83,8 +85,19 @@ struct TubeKeepApp: App {
 
         Settings {
             SettingsView()
-                .environment(library)
-                .modelContainer(library.container)
+                .environmentObject(library)
+                .environmentObject(library.tools)
+                .environment(\.managedObjectContext, library.context)
         }
+    }
+}
+
+/// View › Show/Hide Library, renamed as the library opens and closes.
+private struct LibraryToggleCommand: View {
+    @ObservedObject var reveal: LibraryReveal
+
+    var body: some View {
+        Button(reveal.isShown ? "Hide Library" : "Show Library") { reveal.toggle() }
+            .keyboardShortcut("l")
     }
 }
