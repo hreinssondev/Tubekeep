@@ -8,12 +8,15 @@ enum Prefs {
     static let retentionSeconds = "retentionSeconds"
     static let lastToolUpdate = "lastToolUpdate"
     static let showMenuBarIcon = "showMenuBarIcon"
+    /// Whether the save-playing-video shortcut brings TubeKeep up to play the video, or just downloads it in the background.
+    static let shortcutOpensApp = "shortcutOpensApp"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
             downgradeDays: 3,
             maxHeight: 1080,
             lowHeight: 480,
+            shortcutOpensApp: true,
         ])
     }
 

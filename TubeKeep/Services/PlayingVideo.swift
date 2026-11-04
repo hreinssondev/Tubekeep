@@ -65,7 +65,8 @@ enum PlayingVideo {
 extension Library {
     /// Saves the video playing in the browser and carries on playing it in TubeKeep from the same
     /// spot, pausing the browser. Bound to a global shortcut, so failures report back with a notification.
-    func savePlayingVideo() async {
+    /// Without `openingApp`, the video just downloads in the background and keeps playing in the browser.
+    func savePlayingVideo(openingApp: Bool = true) async {
         do {
             guard let found = try await PlayingVideo.find() else {
                 NSSound.beep()
@@ -76,6 +77,7 @@ extension Library {
             NSSound(named: isNew ? "Pop" : "Tink")?.play()
             guard let video = video(found.id) else { return }
             if let position = found.position, position > 3 { video.resumePosition = position }
+            guard openingApp else { return }
             if found.isPlaying { await NowPlaying.pause() }
             open(video)
         } catch let error as ScriptError where error.isNotPermitted {

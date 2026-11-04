@@ -67,7 +67,7 @@ final class Library {
         }
         player.library = self
         KeyboardShortcuts.onKeyDown(for: .savePlayingVideo) { [weak self] in
-            Task { await self?.savePlayingVideo() }
+            Task { await self?.savePlayingVideo(openingApp: UserDefaults.standard.bool(forKey: Prefs.shortcutOpensApp)) }
         }
         Task { await start() }
     }

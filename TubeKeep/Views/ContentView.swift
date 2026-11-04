@@ -49,6 +49,7 @@ struct ContentView: View {
                     reveal.toggle()
                 }
                 .help("Show or hide the library (⌘L), or scroll over the video")
+                SettingsButton()
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -157,5 +158,30 @@ private struct StatusBar: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(.bar)
             .overlay(alignment: .top) { Divider() }
+    }
+}
+
+/// Quick settings in a popover under the toolbar; the rest live in the Settings window.
+private struct SettingsButton: View {
+    @AppStorage(Prefs.shortcutOpensApp) private var shortcutOpensApp = true
+    @State private var isShown = false
+
+    var body: some View {
+        Button("Settings", systemImage: "gearshape") { isShown.toggle() }
+            .help("Settings")
+            .popover(isPresented: $isShown, arrowEdge: .bottom) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Toggle("Shortcut opens TubeKeep", isOn: $shortcutOpensApp)
+                        .toggleStyle(.switch)
+                    Text(shortcutOpensApp
+                         ? "The save shortcut brings TubeKeep up and plays the video from where you were."
+                         : "The save shortcut only downloads the video in the background; it keeps playing in your browser.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(14)
+                .frame(width: 280)
+            }
     }
 }
