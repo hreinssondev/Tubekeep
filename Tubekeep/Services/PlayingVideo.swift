@@ -63,7 +63,7 @@ enum PlayingVideo {
 }
 
 extension Library {
-    /// Saves the video playing in the browser and carries on playing it in TubeKeep from the same
+    /// Saves the video playing in the browser and carries on playing it in Tubekeep from the same
     /// spot, pausing the browser. Bound to a global shortcut, so failures report back with a notification.
     /// Without `openingApp`, the video just downloads in the background and keeps playing in the browser.
     func savePlayingVideo(openingApp: Bool = true) async {
@@ -82,7 +82,7 @@ extension Library {
             open(video)
         } catch let error as ScriptError where error.isNotPermitted {
             NSSound.beep()
-            Notifier.post("TubeKeep can't read your browser tabs", "Allow it in System Settings › Privacy & Security › Automation.")
+            Notifier.post("Tubekeep can't read your browser tabs", "Allow it in System Settings › Privacy & Security › Automation.")
         } catch {
             NSSound.beep()
             Notifier.post("Couldn't read your browser tabs", "\(error)")
@@ -92,7 +92,7 @@ extension Library {
 
 enum Notifier {
     private final class Delegate: NSObject, UNUserNotificationCenterDelegate {
-        /// Show banners even while TubeKeep is in front.
+        /// Show banners even while Tubekeep is in front.
         func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
             [.banner]
         }

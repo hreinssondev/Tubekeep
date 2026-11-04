@@ -177,10 +177,10 @@ private struct SettingsButton: View {
             .help("Settings")
             .popover(isPresented: $isShown, arrowEdge: .bottom) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Toggle("Shortcut opens TubeKeep", isOn: $shortcutOpensApp)
+                    Toggle("Shortcut opens Tubekeep", isOn: $shortcutOpensApp)
                         .toggleStyle(.switch)
                     Text(shortcutOpensApp
-                         ? "The save shortcut brings TubeKeep up and plays the video from where you were."
+                         ? "The save shortcut brings Tubekeep up and plays the video from where you were."
                          : "The save shortcut only downloads the video in the background; it keeps playing in your browser.")
                         .font(.caption)
                         .foregroundStyle(.secondary)

@@ -39,7 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 @main
-struct TubeKeepApp: App {
+struct TubekeepApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
     private var library: Library { appDelegate.library }
     private var reveal: LibraryReveal { appDelegate.reveal }
@@ -50,7 +50,7 @@ struct TubeKeepApp: App {
     }
 
     var body: some Scene {
-        Window("TubeKeep", id: "main") {
+        Window("Tubekeep", id: "main") {
             ContentView()
                 .environmentObject(library)
                 .environmentObject(library.player)

@@ -4,7 +4,7 @@ struct ScriptError: Error {
     let number: Int
     let message: String
 
-    /// The user hasn't allowed TubeKeep to control the browser (Automation permission).
+    /// The user hasn't allowed Tubekeep to control the browser (Automation permission).
     var isNotPermitted: Bool { number == -1743 }
 }
 

@@ -35,14 +35,14 @@ struct SettingsView: View {
             }
             Section("Saving from the Browser") {
                 KeyboardShortcuts.Recorder("Save playing video:", name: .savePlayingVideo)
-                Toggle("Shortcut opens TubeKeep", isOn: $shortcutOpensApp)
+                Toggle("Shortcut opens Tubekeep", isOn: $shortcutOpensApp)
                 Toggle("Show in menu bar", isOn: $showMenuBarIcon)
                 Toggle("Open at login", isOn: $openAtLogin)
                     .onChange(of: openAtLogin) { on in
                         try? on ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister()
                         openAtLogin = SMAppService.mainApp.status == .enabled
                     }
-                Text("Works from any app while TubeKeep is running: saves the YouTube video playing in Safari or Chrome (or the one in the front tab) and plays it here from the same spot, or, with \"Shortcut opens TubeKeep\" off, just downloads it in the background.")
+                Text("Works from any app while Tubekeep is running: saves the YouTube video playing in Safari or Chrome (or the one in the front tab) and plays it here from the same spot, or, with \"Shortcut opens Tubekeep\" off, just downloads it in the background.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

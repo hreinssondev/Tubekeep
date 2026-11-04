@@ -1,6 +1,7 @@
 import Foundation
 
 enum Paths {
+    /// Spelled as when the app was called TubeKeep, so existing libraries stay where they are.
     static let root = URL.applicationSupportDirectory.appending(path: "TubeKeep", directoryHint: .isDirectory)
     static let bin = root.appending(path: "bin", directoryHint: .isDirectory)
     static let media = root.appending(path: "Media", directoryHint: .isDirectory)

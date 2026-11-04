@@ -87,8 +87,8 @@ struct MenuBarPanel: View {
             PanelButton("Save Video Playing in Browser", shortcut: "⇧⌘S") {
                 Task { await library.savePlayingVideo() }
             }
-            PanelButton("Open TubeKeep") { openMainWindow() }
-            PanelButton("Quit TubeKeep") { NSApp.terminate(nil) }
+            PanelButton("Open Tubekeep") { openMainWindow() }
+            PanelButton("Quit Tubekeep") { NSApp.terminate(nil) }
         }
         .padding(8)
         .frame(width: 320)

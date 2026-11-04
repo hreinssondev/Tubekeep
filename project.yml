@@ -1,4 +1,4 @@
-name: TubeKeep
+name: Tubekeep
 options:
   bundleIdPrefix: com.hreinsson
   deploymentTarget:
@@ -13,11 +13,11 @@ packages:
     url: https://github.com/sindresorhus/KeyboardShortcuts
     from: 3.1.0
 targets:
-  TubeKeep:
+  Tubekeep:
     type: application
     platform: macOS
     sources:
-      - TubeKeep
+      - Tubekeep
       - path: Vendor/mediaremote-adapter.pl
         buildPhase: resources
     dependencies:
@@ -27,19 +27,19 @@ targets:
         link: false
         codeSign: true
     entitlements:
-      path: TubeKeep/TubeKeep.entitlements
+      path: Tubekeep/Tubekeep.entitlements
       properties:
         com.apple.security.automation.apple-events: true
     info:
-      path: TubeKeep/Info.plist
+      path: Tubekeep/Info.plist
       properties:
-        CFBundleDisplayName: TubeKeep
+        CFBundleDisplayName: Tubekeep
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         LSApplicationCategoryType: public.app-category.video
         LSMinimumSystemVersion: "$(MACOSX_DEPLOYMENT_TARGET)"
         NSHumanReadableCopyright: © 2026 Hlynur Hreinsson
-        NSAppleEventsUsageDescription: TubeKeep reads your browser's tabs to find the YouTube video you're watching.
+        NSAppleEventsUsageDescription: Tubekeep reads your browser's tabs to find the YouTube video you're watching.
         CFBundleURLTypes:
           - CFBundleURLName: com.hreinsson.TubeKeep
             CFBundleURLSchemes: [tubekeep]
