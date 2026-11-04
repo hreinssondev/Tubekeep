@@ -56,6 +56,7 @@ struct TubeKeepApp: App {
                 .modelContainer(library.container)
         }
         .defaultSize(width: 1500, height: 860)
+        .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
             CommandGroup(after: .newItem) {
                 Button("Add Link from Clipboard") { library.addFromClipboard() }

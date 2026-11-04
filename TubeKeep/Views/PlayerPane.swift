@@ -23,7 +23,7 @@ struct PlayerPane: View {
                 ContentUnavailableView(
                     "Nothing Playing",
                     systemImage: "play.rectangle",
-                    description: Text("Paste a YouTube link in the toolbar, then double-click a video to play it.")
+                    description: Text("Drop a YouTube link here or press ⇧⌘V to add one from the clipboard, then double-click a video to play it.")
                 )
                 .environment(\.colorScheme, .dark)
             }

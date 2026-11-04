@@ -5,7 +5,6 @@ struct ContentView: View {
     @Environment(PlayerController.self) private var player
     @Environment(LibraryReveal.self) private var reveal
     @State private var path: [Node] = [.byDate]
-    @State private var link = ""
     @State private var renaming: Folder?
     @State private var newName = ""
     @State private var confirmingDelete: Node?
@@ -37,12 +36,6 @@ struct ContentView: View {
             .onChange(of: height, initial: true) { reveal.distance = height }
         }
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                TextField("Paste a YouTube link", text: $link)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 380)
-                    .onSubmit(addLink)
-            }
             ToolbarItem {
                 Button("New Folder", systemImage: "folder.badge.plus") { library.newFolderRequest += 1 }
                     .help("New Folder (⇧⌘N)")
@@ -86,12 +79,7 @@ struct ContentView: View {
         }
     }
 
-    private func addLink() {
-        add(link)
-        link = ""
-    }
-
-    /// Adds links typed, pasted or dropped into the window. A single new video is selected and starts
+    /// Adds links dropped into the window. A single new video is selected and starts
     /// playing as soon as its preview arrives, unless something else is playing.
     private func add(_ text: String) {
         library.add(text)
