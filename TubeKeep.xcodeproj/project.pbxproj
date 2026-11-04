@@ -14,6 +14,7 @@
 		385B5992D44B117E0DB0A45E /* NowPlaying.swift in Sources */ = {isa = PBXBuildFile; fileRef = 669BAB1CCC0F543183204D89 /* NowPlaying.swift */; };
 		3D020E153D2076DAC867F5A7 /* PlayingVideo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228208338343C0161EEF0E8F /* PlayingVideo.swift */; };
 		3DF23D1A3DD72AC058C533F7 /* YTDLP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61B3932D56291AAA381C2F02 /* YTDLP.swift */; };
+		3FC66B08BBA6295034B52824 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 8FC3777BE6846ACBDD265E56 /* AppIcon.icon */; };
 		425E53712E83378F03EFCE79 /* PlayerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD365B721C176628B38F2EBF /* PlayerController.swift */; };
 		53C74C4ED78C66F3C04B040E /* Video.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77BB516341D58D4B9ECBBBCC /* Video.swift */; };
 		60D80F5EF4BB49999A819025 /* LibraryReveal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 892C3243B0FD51AB66B3000D /* LibraryReveal.swift */; };
@@ -69,6 +70,7 @@
 		7C5712660E39D7A201ACB858 /* Prefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prefs.swift; sourceTree = "<group>"; };
 		83EBFE8F210E7101881B4728 /* VideoRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoRow.swift; sourceTree = "<group>"; };
 		892C3243B0FD51AB66B3000D /* LibraryReveal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryReveal.swift; sourceTree = "<group>"; };
+		8FC3777BE6846ACBDD265E56 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		94B48CCE1B8CB7ED1BB4889E /* MenuBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBar.swift; sourceTree = "<group>"; };
 		9504A029107DE2756BA25AD0 /* Media.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Media.swift; sourceTree = "<group>"; };
 		A518A7B2AC7189C8B8069BC6 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -141,6 +143,7 @@
 		936CBAD6FBC8CC48417A2298 /* TubeKeep */ = {
 			isa = PBXGroup;
 			children = (
+				8FC3777BE6846ACBDD265E56 /* AppIcon.icon */,
 				2A964307B11C2A3B2B758081 /* Assets.xcassets */,
 				381E54C29729EBC179185927 /* Info.plist */,
 				68CE2ADAE8F5D9457894F9F8 /* TubeKeep.entitlements */,
@@ -251,6 +254,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3FC66B08BBA6295034B52824 /* AppIcon.icon in Resources */,
 				DF6C5E44C4FD267EAF1EF683 /* Assets.xcassets in Resources */,
 				6BB63F5E71B1355C5CC6BB3D /* mediaremote-adapter.pl in Resources */,
 			);
