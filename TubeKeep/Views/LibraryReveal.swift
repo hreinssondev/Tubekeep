@@ -3,7 +3,8 @@ import SwiftUI
 
 /// How far the library has scrolled up under the player: 0 shows only the video, 1 the whole library.
 /// Only vertical scrolling over the video moves it, so the browser's lists keep their own scrolling
-/// and sideways scrolling still reaches the player to seek.
+/// and sideways scrolling still reaches the player to seek. Nothing else reaches the player: even the
+/// start of a scroll pauses it to scrub, so a gesture's opening events wait until its direction is known.
 @MainActor @Observable
 final class LibraryReveal {
     var progress: CGFloat = 1
@@ -15,6 +16,8 @@ final class LibraryReveal {
     @ObservationIgnored private var tracking = false
     /// The current gesture's axis, fixed by its first movement: true is vertical, nil not yet known.
     @ObservationIgnored private var vertical: Bool?
+    /// The current gesture's opening events, passed on to the player if it turns out sideways.
+    @ObservationIgnored private var held: [NSEvent] = []
     @ObservationIgnored private var velocity: CGFloat = 0
     @ObservationIgnored private var wheelSnap: Task<Void, Never>?
 
@@ -46,24 +49,39 @@ final class LibraryReveal {
             return nil
         }
         if event.phase.contains(.began) || event.phase.contains(.mayBegin) {
+            if !tracking || vertical != nil { held = [] }
             tracking = isOverPlayer(event)
             vertical = nil
             velocity = 0
-            return event
+            guard tracking else { return event }
+            held.append(event)
+            return nil
         }
         guard tracking else { return event }
         if event.phase.contains(.changed) {
-            if vertical == nil, event.scrollingDeltaX != 0 || event.scrollingDeltaY != 0 {
+            if vertical == nil {
+                guard event.scrollingDeltaX != 0 || event.scrollingDeltaY != 0 else { return nil }
                 vertical = !isSideways(event)
+                if vertical == false { held.forEach { playerView?.scrollWheel(with: $0) } }
+                held = []
             }
             guard vertical == true else { return event }
             move(by: event.scrollingDeltaY)
             return nil
         }
-        if event.phase.contains(.ended) || event.phase.contains(.cancelled), vertical == true {
-            snap()
+        if event.phase.contains(.ended) || event.phase.contains(.cancelled) {
+            held = []
+            if vertical == true { snap() }
+            return vertical == false ? event : nil
         }
-        return event
+        return vertical == false ? event : nil
+    }
+
+    /// Whether a scroll event that reached the player may seek it: a sideways mouse wheel, or a
+    /// sideways gesture that started over the video.
+    func allowsSeeking(_ event: NSEvent) -> Bool {
+        if event.phase == [], event.momentumPhase == [] { return isSideways(event) }
+        return tracking && vertical == false
     }
 
     private func move(by delta: CGFloat) {
