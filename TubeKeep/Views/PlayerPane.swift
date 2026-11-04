@@ -37,7 +37,7 @@ private struct PlayerView: NSViewRepresentable {
     let reveal: LibraryReveal
 
     func makeNSView(context: Context) -> AVPlayerView {
-        let view = NonScrollingPlayerView()
+        let view = MainPlayerView()
         reveal.playerView = view
         view.player = player
         view.controlsStyle = .floating
@@ -50,8 +50,30 @@ private struct PlayerView: NSViewRepresentable {
 }
 
 /// Ignores scrolling, which would pause and seek: it only reveals the library. The arrow keys seek.
-private final class NonScrollingPlayerView: AVPlayerView {
+/// Space plays and pauses from anywhere in the window, not just when the player has focus.
+private final class MainPlayerView: AVPlayerView {
+    private var keyMonitor: Any?
+
     override func scrollWheel(with event: NSEvent) {}
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
+        keyMonitor = window == nil ? nil : NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            MainActor.assumeIsolated { self?.togglePlayback(on: event) ?? event }
+        }
+    }
+
+    /// Space without modifiers in this window, unless a text field is taking it.
+    private func togglePlayback(on event: NSEvent) -> NSEvent? {
+        guard event.window === window, event.keyCode == 49,
+              event.modifierFlags.isDisjoint(with: [.command, .control, .option, .shift]),
+              !(window?.firstResponder is NSText),
+              let player, player.currentItem != nil
+        else { return event }
+        if player.timeControlStatus == .paused { player.play() } else { player.pause() }
+        return nil
+    }
 }
 
 private struct WaitingOverlay: View {
