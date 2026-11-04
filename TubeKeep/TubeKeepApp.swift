@@ -1,10 +1,23 @@
 import SwiftUI
 import SwiftData
 
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    let library = Library()
+
+    /// tubekeep:// links. Handled here rather than with onOpenURL, which isn't delivered reliably
+    /// with both a window and a menu bar scene.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        urls.forEach(library.handle(openURL:))
+    }
+}
+
 @main
 struct TubeKeepApp: App {
-    @State private var library = Library()
+    @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
+    private var library: Library { appDelegate.library }
     @State private var reveal = LibraryReveal()
+    @AppStorage(Prefs.showMenuBarIcon) private var showMenuBarIcon = true
 
     init() {
         Prefs.registerDefaults()
@@ -17,7 +30,6 @@ struct TubeKeepApp: App {
                 .environment(library.player)
                 .environment(reveal)
                 .modelContainer(library.container)
-                .onOpenURL { library.handle(openURL: $0) }
         }
         .defaultSize(width: 1500, height: 860)
         .commands {
@@ -34,6 +46,15 @@ struct TubeKeepApp: App {
                 Divider()
             }
         }
+
+        MenuBarExtra(isInserted: $showMenuBarIcon) {
+            MenuBarPanel()
+                .environment(library)
+                .modelContainer(library.container)
+        } label: {
+            MenuBarLabel(library: library)
+        }
+        .menuBarExtraStyle(.window)
 
         Settings {
             SettingsView()

@@ -10,6 +10,7 @@ struct SettingsView: View {
     @AppStorage(Prefs.lowHeight) private var lowHeight = 480
     @Query private var videos: [Video]
     @State private var openAtLogin = SMAppService.mainApp.status == .enabled
+    @AppStorage(Prefs.showMenuBarIcon) private var showMenuBarIcon = true
 
     var body: some View {
         Form {
@@ -34,6 +35,7 @@ struct SettingsView: View {
             }
             Section("Saving from the Browser") {
                 KeyboardShortcuts.Recorder("Save playing video:", name: .savePlayingVideo)
+                Toggle("Show in menu bar", isOn: $showMenuBarIcon)
                 Toggle("Open at login", isOn: $openAtLogin)
                     .onChange(of: openAtLogin) { _, on in
                         try? on ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister()

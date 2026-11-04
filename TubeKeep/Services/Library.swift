@@ -29,6 +29,13 @@ final class Library {
 
     var context: ModelContext { container.mainContext }
 
+    /// Average progress of downloads and upgrades, or nil when none are running. Downgrades don't count.
+    var downloadProgress: Double? {
+        let running = jobs.values.filter { $0.kind != .downgrade }
+        guard !running.isEmpty else { return nil }
+        return running.reduce(0) { $0 + $1.progress } / Double(running.count)
+    }
+
     init() {
         Paths.ensure(Paths.media)
         do {
@@ -311,11 +318,26 @@ final class Library {
 
     func delete(_ video: Video) {
         let id = video.videoID
-        cancelJob(id)
+        let task = jobs[id]?.task
+        task?.cancel()
         if player.isShowing(id) { player.clear() }
-        Paths.remove(Paths.folder(id))
         context.delete(video)
         save()
+        // Remove the files once any running job has stopped writing them.
+        Task {
+            await task?.value
+            Paths.remove(Paths.folder(id))
+        }
+    }
+
+    /// Stops a download without leaving anything behind: a first download removes the video entirely,
+    /// an upgrade discards the partial file and keeps the downgraded copy.
+    func cancelDownload(_ video: Video) {
+        switch jobs[video.videoID]?.kind {
+        case .download?: delete(video)
+        case .upgrade?: cancelJob(video.videoID)
+        default: break
+        }
     }
 
     func togglePin(_ video: Video) {

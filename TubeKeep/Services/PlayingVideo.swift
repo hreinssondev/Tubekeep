@@ -69,6 +69,7 @@ extension Library {
                 return
             }
             let isNew = addVideo(id: found.id, title: found.title, to: nil)
+            NSSound(named: isNew ? "Pop" : "Tink")?.play()
             let title = video(found.id)?.title ?? found.title ?? "Video"
             Notifier.post(isNew ? "Saving to TubeKeep" : "Already in TubeKeep", title)
         } catch let error as ScriptError where error.isNotPermitted {

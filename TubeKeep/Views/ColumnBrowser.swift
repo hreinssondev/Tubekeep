@@ -271,7 +271,9 @@ private struct VideoMenu: View {
         Divider()
         Toggle("Keep in High Quality", isOn: Binding(get: { video.pinned }, set: { _ in library.togglePin(video) }))
         if job != nil {
-            Button("Cancel \(jobName(job!.kind))") { library.cancelJob(video.videoID) }
+            Button("Cancel \(jobName(job!.kind))") {
+                if job!.kind == .downgrade { library.cancelJob(video.videoID) } else { library.cancelDownload(video) }
+            }
         } else if video.highBytes == nil {
             Button(video.failure == nil ? "Download High Quality" : "Retry Download") { library.download(video) }
         } else if video.lowBytes == nil, !video.pinned {

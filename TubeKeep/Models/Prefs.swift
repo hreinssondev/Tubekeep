@@ -7,6 +7,7 @@ enum Prefs {
     /// Hidden override for testing retention: `defaults write com.hreinsson.TubeKeep retentionSeconds 120`.
     static let retentionSeconds = "retentionSeconds"
     static let lastToolUpdate = "lastToolUpdate"
+    static let showMenuBarIcon = "showMenuBarIcon"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
