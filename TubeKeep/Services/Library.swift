@@ -198,7 +198,9 @@ final class Library {
                 let result = try await YTDLP.download(
                     id: id,
                     maxHeight: maxHeight,
-                    previewHeight: kind == .download ? Self.previewHeight : nil,
+                    // A preview is only worth it if it's smaller than the video itself.
+                    previewHeight: kind == .download && maxHeight > Self.previewHeight ? Self.previewHeight : nil,
+                    stream: kind == .download,
                     onInfo: { info in Task { @MainActor in self.apply(info, to: id) } },
                     onStream: { url in Task { @MainActor in self.adoptStream(url, for: id) } },
                     onPreview: { preview in Task { @MainActor in self.adoptPreview(preview, for: id) } },

@@ -6,7 +6,7 @@ import ServiceManagement
 struct SettingsView: View {
     @Environment(Library.self) private var library
     @AppStorage(Prefs.downgradeDays) private var downgradeDays = 3
-    @AppStorage(Prefs.maxHeight) private var maxHeight = 1080
+    @AppStorage(Prefs.maxHeight) private var maxHeight = 480
     @AppStorage(Prefs.lowHeight) private var lowHeight = 480
     @Query private var videos: [Video]
     @State private var openAtLogin = SMAppService.mainApp.status == .enabled
@@ -16,10 +16,10 @@ struct SettingsView: View {
         Form {
             Section("Quality") {
                 Picker("Save videos in", selection: $maxHeight) {
-                    Text("720p").tag(720)
-                    Text("1080p").tag(1080)
-                    Text("1440p (AV1)").tag(1440).disabled(!Media.decodesAV1)
-                    Text("4K (AV1)").tag(2160).disabled(!Media.decodesAV1)
+                    ForEach(Prefs.qualities, id: \.self) { height in
+                        Text(verbatim: height > 1080 ? "\(height)p (AV1)" : "\(height)p").tag(height)
+                            .disabled(height > 1080 && !Media.decodesAV1)
+                    }
                 }
                 Picker("Downgrade to", selection: $lowHeight) {
                     Text("360p").tag(360)

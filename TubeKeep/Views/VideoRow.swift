@@ -55,6 +55,14 @@ struct StatusBadge: View {
                 ProgressView(value: job.progress)
                     .progressViewStyle(.circular)
                     .controlSize(.mini)
+                if job.kind != .downgrade {
+                    Button { library.cancelDownload(video) } label: {
+                        Image(systemName: "xmark.circle.fill").font(.body)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .help(job.kind == .download ? "Cancel and delete this download" : "Cancel the upgrade")
+                }
             } else if video.failure != nil, !video.isDownloaded {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                     .help(video.failure ?? "")

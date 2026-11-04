@@ -16,31 +16,35 @@ struct ColumnBrowser: View {
     var body: some View {
         let tree = Tree(videos: videos, folders: folders)
         let parents = columnParents
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal) {
-                HStack(spacing: 0) {
-                    ForEach(Array(parents.enumerated()), id: \.offset) { index, parent in
-                        BrowserColumn(
-                            index: index,
-                            parent: parent,
-                            tree: tree,
-                            selection: selection(index),
-                            renaming: $renaming,
-                            confirmingDelete: $confirmingDelete,
-                            open: { open($0, in: index, tree: tree) },
-                            back: { back(from: index) }
-                        )
-                        .focused($focus, equals: index)
-                        .frame(width: widths[index] ?? defaultWidth(parent))
-                        ColumnDivider(width: widthBinding(index, parent: parent))
+        HStack(spacing: 0) {
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal) {
+                    HStack(spacing: 0) {
+                        ForEach(Array(parents.enumerated()), id: \.offset) { index, parent in
+                            BrowserColumn(
+                                index: index,
+                                parent: parent,
+                                tree: tree,
+                                selection: selection(index),
+                                renaming: $renaming,
+                                confirmingDelete: $confirmingDelete,
+                                open: { open($0, in: index, tree: tree) },
+                                back: { back(from: index) }
+                            )
+                            .focused($focus, equals: index)
+                            .frame(width: widths[index] ?? defaultWidth(parent))
+                            ColumnDivider(width: widthBinding(index, parent: parent))
+                        }
+                        Color.clear.frame(width: 1).id("end")
                     }
-                    Color.clear.frame(width: 1).id("end")
+                }
+                .scrollIndicators(.automatic)
+                .onChange(of: parents.count) {
+                    withAnimation(.easeOut(duration: 0.15)) { proxy.scrollTo("end", anchor: .trailing) }
                 }
             }
-            .scrollIndicators(.automatic)
-            .onChange(of: parents.count) {
-                withAnimation(.easeOut(duration: 0.15)) { proxy.scrollTo("end", anchor: .trailing) }
-            }
+            Divider()
+            QualityColumn()
         }
         .onChange(of: videos.count + folders.count, initial: true) {
             let valid = tree.validPrefix(of: path)
@@ -321,6 +325,48 @@ private struct ContainerRow: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
         }
+    }
+}
+
+/// The quality new downloads are saved in, at the browser's right edge.
+private struct QualityColumn: View {
+    @AppStorage(Prefs.maxHeight) private var maxHeight = 480
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text("Quality")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.bottom, 2)
+            ForEach(Prefs.qualities, id: \.self) { height in
+                let needsAV1 = height > 1080 && !Media.decodesAV1
+                Button(String(height) + "p") { maxHeight = height }
+                    .buttonStyle(QualityButtonStyle(selected: height == maxHeight))
+                    .disabled(needsAV1)
+                    .help(needsAV1 ? "Needs a Mac that decodes AV1 in hardware" : "Save new videos in up to \(height)p")
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .frame(width: 84)
+    }
+}
+
+private struct QualityButtonStyle: ButtonStyle {
+    let selected: Bool
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.callout.monospacedDigit().weight(selected ? .semibold : .regular))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 3)
+            .foregroundStyle(selected ? AnyShapeStyle(.white) : AnyShapeStyle(isEnabled ? .primary : .tertiary))
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(selected ? AnyShapeStyle(.tint) : AnyShapeStyle(.quaternary.opacity(configuration.isPressed ? 1 : 0.5)))
+            )
+            .contentShape(Rectangle())
     }
 }
 

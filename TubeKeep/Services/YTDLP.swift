@@ -34,12 +34,13 @@ enum YTDLP {
     /// Downloads the video into its `.incoming` folder and returns the full-quality file.
     /// With `previewHeight`, a small copy is fetched first in the same run (YouTube is only asked once)
     /// and handed to `onPreview` so playback can start while the full quality downloads.
-    /// Before that, `onStream` gets YouTube's HLS stream of the video, which plays as soon as a few seconds have buffered.
+    /// With `stream`, `onStream` first gets YouTube's HLS stream of the video, which plays as soon as a few seconds have buffered.
     /// `onInfo` fires as soon as the metadata and thumbnail are on disk, before the video itself.
     static func download(
         id: String,
         maxHeight: Int,
         previewHeight: Int?,
+        stream: Bool,
         onInfo: @escaping @Sendable (VideoInfo) -> Void,
         onStream: @escaping @Sendable (URL) -> Void,
         onPreview: @escaping @Sendable (Finished) -> Void,
@@ -65,7 +66,7 @@ enum YTDLP {
             "-P", dir.path, "-o", "dl.%(format_id)s.%(ext)s", "-o", "infojson:dl", "-o", "thumbnail:dl",
             "-f", formats,
         ]
-        if previewHeight != nil {
+        if stream {
             // Printed once the formats are known, before anything downloads.
             arguments += ["--print", "after_filter:TKS %(formats.:.manifest_url)j"]
         }
